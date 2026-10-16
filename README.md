@@ -1,152 +1,92 @@
 # EdgeVLM Lab
 
-An interactive toolkit that shows how a small vision-language model (VLM) runs
-on edge hardware. A user shows the model an image, asks a question, and watches
-the answer stream in. Then they change hardware design choices (number
-precision, multiplier array size, image size, memory bandwidth) and see how
-accuracy, time to first token (TTFT), tokens per second, FPGA resources, power
-and energy respond.
+ECE 425/525 (Fall 2026) team project, P10.
 
-The hardware numbers come from our own parameterized Verilog accelerator,
-verified against a fixed-point reference and synthesized in Vivado for a
-Zynq-7020.
+**What it is:** an interactive tool that shows what happens when a small vision-language model
+(SmolVLM-256M) runs on a small FPGA chip. Users ask the model about an image, then change hardware
+choices (how many multipliers, how many bits per number, memory bandwidth) and see how speed,
+accuracy, chip size and power change.
 
-> **Status: early development (Fall 2026).** The systolic-array RTL, its
-> testbench, a cycle-accurate model, the quantization reference and a first
-> performance model are in place. See [Roadmap](#roadmap).
+**The main lesson:** more multipliers make the model start answering sooner, but they don't make it
+talk faster. Fewer bits do.
+- Before the first word (*prefill*), the model does a huge amount of math, so a bigger multiplier array helps.
+- After that (*decode*), each new word re-reads all the model's weights from memory, so fewer bits per weight helps.
 
-## The idea in one sentence
+## Who owns what
 
-**More multipliers make the model start answering sooner, but they don't make
-it talk faster. Fewer bits do.**
+| Folder | Owner | What it holds | Status |
+| --- | --- | --- | --- |
+| `hw/` | Lucius Casertano | Verilog matrix-multiply engine, testbench, Python model of it, Vivado scripts | Engine passes simulation; Vivado sweep not run yet |
+| `perf/` | Lucius Casertano | Performance model (TTFT, tokens/s) and tradeoff chart | Working, but uses placeholder workload numbers |
+| `eryc_model/` | Eryc Rodriguez | Running and profiling SmolVLM, 8/4-bit accuracy | Not started, see `eryc_model/README.md` |
+| `anh_web/` | Anh Tran | The interactive website | Not started, see `anh_web/README.md` |
+| `docs/` | Everyone | Figures and diagrams for the report | Two figures so far |
 
-- **Prefill is compute-bound.** Before the first word, the vision encoder
-  processes every image patch, then the language model processes the image and
-  prompt tokens together. That is large matrix multiplication, so a bigger
-  array cuts TTFT.
-- **Decode is memory-bound.** Each new word re-reads every language-model
-  weight while doing little math. Extra multipliers sit idle; 8-bit or 4-bit
-  weights move fewer bytes and raise tokens per second.
+## How the pieces connect
 
-## How it fits together
-
-```mermaid
-flowchart LR
-    subgraph offline["Done once, ahead of time"]
-        M[SmolVLM-256M] --> PR[Profile + quantize<br/>PyTorch hooks, 16/8/4-bit]
-        PR --> REF[Fixed-point reference]
-        RTL[Parameterized Verilog<br/>P x P array, B-bit] --> SIM[Simulate vs. reference]
-        REF --> SIM
-        RTL --> SYN[Vivado sweep<br/>9 designs]
-        PR --> PM[Performance model]
-        SYN --> PM
-        PM --> J[results.json]
-    end
-    subgraph live["Live, in the browser"]
-        U[Image + question + sliders] --> W[Web app]
-        J --> W
-        W --> O[Answer, TTFT, tok/s,<br/>resources, roofline]
-    end
+```
+eryc_model/profile_summary.json ─┐
+                                 ├─> perf/perf_model.py ─> TTFT, tokens/s ─┐
+hw/ ── Vivado sweep ─> results.json ┘                                      ├─> anh_web/ (sliders + charts)
+                                    └──────────────────────────────────────┘
 ```
 
-## Accelerator
+- **Eryc → Lucius:** `eryc_model/profile_summary.json` (how much work the model does) replaces the placeholder `perf/example_profile.json`.
+- **Lucius → Anh:** `results.json` (chip size, clock speed, power for each of the 9 designs) and `perf/perf_model.py`.
 
-`hw/rtl/systolic_array.v` is a P x P **output-stationary systolic array** of
-signed B-bit multiply-accumulate PEs (`hw/rtl/mac_pe.v`):
+## Hardware (`hw/`)
 
-- Each cycle, one column of A and one row of B enter the array. Row *i* of A is
-  delayed *i* cycles and column *j* of B is delayed *j* cycles, so `A[i][k]` and
-  `B[k][j]` meet in PE(*i*, *j*) at cycle *k + i + j*.
-- Each PE adds its product into a local accumulator and passes its operands
-  right and down.
-- A P x P output tile takes **K + 2P - 2 cycles** for an inner dimension K;
-  `busy` falls when results are final.
-- `P`, `B` and the accumulator width `ACC` (default 2B + 8) are parameters.
+A P x P grid of multiply-add units (a *systolic array*) that multiplies matrices, written in Verilog.
+P (grid size) and B (bits per number) are parameters, giving 9 designs:
 
-Planned design sweep on the Zynq-7020 (53,200 LUTs, 220 DSP blocks):
-
-| | 4 x 4 (16 MACs) | 8 x 8 (64 MACs) | 16 x 16 (256 MACs) |
+| | 4 x 4 | 8 x 8 | 16 x 16 |
 | --- | --- | --- | --- |
-| 16-bit | design 1 | design 2 | design 3 (exceeds 220 DSPs) |
+| 16-bit | design 1 | design 2 | design 3 (exceeds the chip's 220 DSPs) |
 | 8-bit | design 4 | design 5 | design 6 |
 | 4-bit | design 7 | design 8 | design 9 |
 
-## Repository layout
-
 ```
-hw/rtl/           Verilog: mac_pe, systolic_array
-hw/tb/            Self-checking testbench (random matrices vs. behavioral multiply)
-hw/model/         Cycle-accurate Python model of the array (golden timing + values)
-hw/scripts/       Testbench runner, Vivado synthesis sweep -> results.json
-model/            VLM profiling (PyTorch hooks) and fixed-point quantization reference
-perf/             Roofline performance model (TTFT, tokens/s, energy)
-web/              React + Vite front end (coming)
-docs/             Diagrams and reports
+hw/rtl/       mac_pe.v (one multiply-add unit), systolic_array.v (the grid)
+hw/tb/        tb_systolic_array.v: feeds random matrices, checks every answer
+hw/model/     systolic_model.py: cycle-by-cycle Python copy of the hardware
+              plot_dataflow.py: draws the data moving through the grid
+hw/scripts/   run_tb.py (simulate all 9), run_sweep.py + synth_one.tcl (Vivado), clk.xdc
 ```
 
-## Quick start
+A P x P output tile takes **K + 2P - 2 clock cycles** for inner dimension K.
+
+## Running it
 
 ```bash
 pip install -r requirements.txt
 
-# Cycle-accurate model self-test (numpy only)
+# Python model self-test
 python hw/model/systolic_model.py
 
-# Quantization error at 16/8/4 bits on random data
-python model/quant_ref.py
+# Simulate the Verilog for all 9 designs (Vivado's simulator; open a terminal
+# where Vivado's settings64 script has been run). Or add: --sim iverilog
+python hw/scripts/run_tb.py
 
-# First-order TTFT / tokens-per-second table (placeholder workload numbers)
-python perf/perf_model.py
-
-# RTL testbench across array sizes and precisions (Vivado simulator)
-python hw/scripts/run_tb.py            # or: --sim iverilog
-
-# Synthesis sweep (Vivado, Zynq-7020) -> results.json
+# Synthesize all 9 designs in Vivado -> results.json (try one first: --sizes 4 --bits 8)
 python hw/scripts/run_sweep.py
 
-# Profile the real model (needs: pip install torch transformers pillow)
-python model/profile_smolvlm.py --image docs/example.jpg
+# Performance table and figures
+python perf/perf_model.py
+python hw/model/plot_dataflow.py      # -> docs/dataflow.png
+python perf/plot_perf.py              # -> docs/tradeoff.png
+```
 
-# Figures: per-cycle dataflow of the array, and the 9-design TTFT vs. tokens/s tradeoff
-python hw/model/plot_dataflow.py          # -> docs/dataflow.png
-python perf/plot_perf.py                  # -> docs/tradeoff.png
-
-# Waveforms: dump a VCD and open it in GTKWave (or use Vivado's waveform viewer)
+**Waveforms:** add `hw/rtl/*.v` and `hw/tb/tb_systolic_array.v` to a Vivado project and click
+*Run Behavioral Simulation*. Or with Icarus Verilog + GTKWave:
+```bash
 iverilog -g2012 -DDUMP -P tb_systolic_array.P=4 -P tb_systolic_array.K=8 -o sim.vvp hw/rtl/*.v hw/tb/tb_systolic_array.v
 vvp -n sim.vvp && gtkwave waves.vcd
 ```
 
-## Status
+## Deadlines
 
-| Piece | State |
-| --- | --- |
-| Cycle-accurate array model | Working: matches numpy matmul for 18 configurations, latency K + 2P - 2 |
-| Quantization reference | Working (per-tensor and per-channel symmetric) |
-| Performance model | Working with placeholder workload numbers |
-| Systolic-array RTL + testbench | Passing in Icarus Verilog: all 9 (P, B) configs, plus K = 1, 64, 576 |
-| Synthesis sweep scripts | Written; first Vivado run pending |
-| VLM profiler | Written; first run pending |
-| Softmax / LayerNorm units | Planned |
-| Web app | Planned |
+- **Midproject: Sun Nov 1, 11:59 PM.** 3–4 page report (Overleaf template), repo link, 2-minute video.
+  Every member submits their own `P10_MidProject_FullName.zip`.
+- **Final: Dec 11.**
 
-## Roadmap
-
-**By Oct 25 (midterm):** SmolVLM running in PyTorch and in the browser; per-layer
-profile; first 8- and 4-bit accuracy results; matrix-multiply engine passing
-simulation against the reference; first TTFT estimate; site skeleton with one
-working slider.
-
-**By Dec 11 (final):** all 9 designs synthesized; performance model validated
-against cycle-accurate simulation of one full-size layer; site with lessons and
-Verilog export.
-
-## Team
-
-| Area | Owner |
-| --- | --- |
-| Hardware: accelerator RTL, verification, synthesis, performance model | Lucius Casertano |
-| Model: profiling, quantization, accuracy benchmarks | Eryc Rodriguez |
-| Website: React app, in-browser model, visualizations | Anh Tran |
-
-Built for a graduate deep learning course at the University of Arizona (Fall 2026).
 Model: [SmolVLM-256M-Instruct](https://huggingface.co/HuggingFaceTB/SmolVLM-256M-Instruct) (Apache 2.0).
