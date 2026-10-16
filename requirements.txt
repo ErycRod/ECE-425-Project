@@ -1,0 +1,4 @@
+# hardware model, performance model and plots
+numpy>=1.24
+matplotlib>=3.7
+# teammates: add your own dependencies here (e.g. torch, transformers, gradio)
