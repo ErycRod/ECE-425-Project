@@ -2,3 +2,10 @@
 numpy>=1.24
 matplotlib>=3.7
 # teammates: add your own dependencies here (e.g. torch, transformers, gradio)
+# website backend (anh_web)
+fastapi>=0.110
+uvicorn[standard]>=0.29
+python-multipart>=0.0.9
+# website tests (anh_web)
+pytest>=7.0
+httpx>=0.27
