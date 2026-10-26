@@ -11,16 +11,22 @@ accuracy, chip size and power change.
 talk faster. Fewer bits do.
 - Before the first word (*prefill*), the model does a huge amount of math, so a bigger multiplier array helps.
 - After that (*decode*), each new word re-reads all the model's weights from memory, so fewer bits per weight helps.
+- Twist from synthesis: on this FPGA, 16-bit multipliers use DSP blocks (~296 MHz) while 8/4-bit ones are built
+  from LUTs (130–162 MHz), so fewer bits doesn't automatically mean a faster first word.
 
 ## Who owns what
 
 | Folder | Owner | What it holds | Status |
 | --- | --- | --- | --- |
-| `hw/` | Lucius Casertano | Verilog matrix-multiply engine, testbench, Python model of it, Vivado scripts | Engine passes simulation; Vivado sweep not run yet |
-| `perf/` | Lucius Casertano | Performance model (TTFT, tokens/s) and tradeoff chart | Working, but uses placeholder workload numbers |
+| `hw/` | Lucius Casertano | Verilog matrix-multiply engine, testbench, Python model of it, Vivado scripts | Working: all 9 designs pass simulation (including worst-case overflow test); Vivado sweep → `results.json` |
+| `perf/` | Lucius Casertano | Performance model (TTFT, tokens/s, energy), tradeoff chart, latency + report-table scripts | Working; uses each design's real Fmax and power from `results.json`; workload numbers are a placeholder until Eryc's profile lands |
 | `eryc_model/` | Eryc Rodriguez | Running and profiling SmolVLM, 8/4-bit accuracy | Not started, see `eryc_model/README.md` |
-| `anh_web/` | Anh Tran | The interactive website | Not started, see `anh_web/README.md` |
-| `docs/` | Everyone | Figures and diagrams for the report | Two figures so far |
+| `anh_web/` | Anh Tran | The interactive website | Backend working (FastAPI); web page in progress, see `anh_web/README.md` |
+| `docs/` | Everyone | Figures, architecture diagram, report sections | `architecture.png`, `dataflow.png`, `tradeoff.png`, `report/` |
+
+**Real vs. placeholder right now:** hardware numbers (simulation, synthesis) are real.
+The workload (how much math SmolVLM does) is a rough placeholder, so TTFT and tokens/s show
+the right *trends* but not final values. The model does not answer questions yet.
 
 ## How the pieces connect
 
@@ -51,9 +57,14 @@ hw/tb/        tb_systolic_array.v: feeds random matrices, checks every answer
 hw/model/     systolic_model.py: cycle-by-cycle Python copy of the hardware
               plot_dataflow.py: draws the data moving through the grid
 hw/scripts/   run_tb.py (simulate all 9), run_sweep.py + synth_one.tcl (Vivado), clk.xdc
+perf/         perf_model.py (TTFT, tokens/s, energy), plot_perf.py (tradeoff chart),
+              measure_latency.py (response times), report_table.py (LaTeX table from results.json)
+docs/         make_architecture.py (system diagram), report/ (report sections + references)
 ```
 
 A P x P output tile takes **K + 2P - 2 clock cycles** for inner dimension K.
+The accumulators are 2B + 12 bits wide, so they never overflow for K up to 8191
+(SmolVLM's largest inner dimension is 3072).
 
 ## Running it
 
@@ -70,10 +81,19 @@ python hw/scripts/run_tb.py
 # Synthesize all 9 designs in Vivado -> results.json (try one first: --sizes 4 --bits 8)
 python hw/scripts/run_sweep.py
 
-# Performance table and figures
+# Performance table and figures (use results.json automatically once it exists)
 python perf/perf_model.py
-python hw/model/plot_dataflow.py      # -> docs/dataflow.png
 python perf/plot_perf.py              # -> docs/tradeoff.png
+python hw/model/plot_dataflow.py      # -> docs/dataflow.png
+python docs/make_architecture.py      # -> docs/architecture.png
+python perf/report_table.py           # -> docs/table_designs.tex (for the report)
+```
+
+**Website backend** (Anh's; see `anh_web/README.md` for the page):
+```bash
+cd anh_web
+python -m uvicorn server:app --app-dir backend --port 8000
+# then, in another terminal from the repo root: python perf/measure_latency.py
 ```
 
 **Waveforms:** add `hw/rtl/*.v` and `hw/tb/tb_systolic_array.v` to a Vivado project and click

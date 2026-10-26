@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
-from perf_model import estimate
+from perf_model import estimate, load_results, design_clock_power, default_profile_path, DEFAULT_RESULTS
 
 COLORS = {16: "#2a78d6", 8: "#eb6834", 4: "#1baf7a"}   # validated categorical slots 1-3
 INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e6e5e1"
@@ -22,23 +22,30 @@ INK, MUTED, GRID = "#0b0b0b", "#52514e", "#e6e5e1"
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--profile", default=os.path.join(HERE, "example_profile.json"))
+    ap.add_argument("--profile", default=default_profile_path())
+    ap.add_argument("--results", default=DEFAULT_RESULTS)
     ap.add_argument("--f-mhz", type=float, default=100.0)
     ap.add_argument("--bw-gbs", type=float, default=1.0)
     ap.add_argument("--util", type=float, default=0.8)
     ap.add_argument("--out", default=os.path.join("docs", "tradeoff.png"))
     a = ap.parse_args()
     prof = json.load(open(a.profile))
+    results = load_results(a.results)
 
     fig, ax = plt.subplots(figsize=(7.2, 4.6))
     for bits in (16, 8, 4):
-        pts = [estimate(prof, P, bits, a.f_mhz, a.bw_gbs, a.util) for P in (4, 8, 16)]
+        pts = [estimate(prof, P, bits, design_clock_power(results, P, bits, a.f_mhz)[0], a.bw_gbs, a.util)
+               for P in (4, 8, 16)]
         xs = [r["ttft_s"] for r in pts]; ys = [r["tokens_per_s"] for r in pts]
         ax.plot(xs, ys, color=COLORS[bits], linewidth=2, zorder=2)
         ax.scatter(xs, ys, s=64, color=COLORS[bits], edgecolor="white", linewidth=2,
                    zorder=3, label=f"{bits}-bit")
         for r in pts:
-            note = "  (over 220 DSPs)" if (r["P"] == 16 and bits == 16) else ""
+            row = results.get((r["P"], bits))
+            if row is not None:
+                note = "" if row.get("fits_zynq7020") else "  (doesn't fit)"
+            else:
+                note = "  (over 220 DSPs)" if (r["P"] == 16 and bits == 16) else ""
             ax.annotate(f"{r['P']}×{r['P']}{note}", (r["ttft_s"], r["tokens_per_s"]),
                         textcoords="offset points", xytext=(6, 6), fontsize=8, color=MUTED)
     ax.set_xscale("log")
@@ -54,10 +61,11 @@ def main():
     for s in ("left", "bottom"):
         ax.spines[s].set_color(GRID)
     ax.tick_params(colors=MUTED)
-    ax.legend(frameon=False, loc="upper right")
+    ax.legend(frameon=False, loc="center right")
     ax.set_title("Bigger arrays cut TTFT; fewer bits raise tokens/s", loc="left",
                  fontsize=12, color=INK)
-    fig.text(0.01, 0.01, f"{a.f_mhz:.0f} MHz, {a.bw_gbs} GB/s, util {a.util}. "
+    clock = "Vivado Fmax per design" if results else f"{a.f_mhz:.0f} MHz"
+    fig.text(0.01, 0.01, f"{clock}, {a.bw_gbs} GB/s, util {a.util}. "
              f"Workload: {'PLACEHOLDER estimate' if 'PLACEHOLDER' in prof.get('note', '') else prof.get('note', '')}", fontsize=7, color=MUTED)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)

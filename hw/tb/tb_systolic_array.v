@@ -1,7 +1,8 @@
 `timescale 1ns / 1ps
 ////////////////////////////////////////////////////////////////////////////////
 // tb_systolic_array: self-checking test of systolic_array.
-// Streams random signed A (P x K) and B (K x P) matrices, waits for busy to
+// Streams random signed A (P x K) and B (K x P) matrices (trial 0 = worst-case
+// overflow pattern), waits for busy to
 // fall, and compares every C[i][j] with a behavioral matrix multiply.
 // Override P / B / K / TRIALS from the command line to test other configs.
 // Prints "TEST PASSED" or "FAIL: ...".
@@ -11,7 +12,7 @@ module tb_systolic_array;
     parameter B      = 8;
     parameter K      = 16;
     parameter TRIALS = 5;
-    localparam ACC   = 2 * B + 8;
+    localparam ACC   = 2 * B + 12;
 
     reg                  clk = 1'b0, rst = 1'b1, clear = 1'b0, in_valid = 1'b0;
     reg  [P*B-1:0]       a_col = 0, b_row = 0;
@@ -46,6 +47,12 @@ module tb_systolic_array;
             // random signed B-bit operands (full range, including -2^(B-1))
             for (i = 0; i < P*K; i = i + 1) begin tmp = $random; A[i]  = tmp >>> (32 - B); end
             for (i = 0; i < K*P; i = i + 1) begin tmp = $random; Bm[i] = tmp >>> (32 - B); end
+            // trial 0 is the worst case for overflow: every operand = -2^(B-1),
+            // so every product is the largest positive value, 2^(2B-2)
+            if (t == 0) begin
+                for (i = 0; i < P*K; i = i + 1) A[i]  = -(1 <<< (B - 1));
+                for (i = 0; i < K*P; i = i + 1) Bm[i] = -(1 <<< (B - 1));
+            end
 
             @(negedge clk) clear = 1'b1;
             @(negedge clk) clear = 1'b0;

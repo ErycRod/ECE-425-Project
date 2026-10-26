@@ -14,7 +14,7 @@ import numpy as np
 class SystolicArrayModel:
     def __init__(self, P, B, acc_bits=None):
         self.P, self.B = P, B
-        self.ACC = acc_bits if acc_bits is not None else 2 * B + 8
+        self.ACC = acc_bits if acc_bits is not None else 2 * B + 12
         self.reset()
 
     def reset(self):

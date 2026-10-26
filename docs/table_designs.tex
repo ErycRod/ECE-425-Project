@@ -1,0 +1,23 @@
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\caption{The nine designs on the Zynq-7020 (Vivado, post-synthesis) and their predicted TTFT and decode speed at each design's $f_{\max}$, 1~GB/s (placeholder workload).}
+\label{tab:designs}
+\begin{tabular}{l c r r r r r r}
+\hline
+Array & Bits & LUTs & DSPs & $f_{\max}$ & Power & TTFT & Tok/s \\
+      &      &      &      & (MHz)      & (W)   & (s)  &       \\
+\hline
+$4\times4$ & 16 & 25 & 16 & 295.9 & 0.121 & 28.27 & 3.7 \\
+$8\times8$ & 16 & 123 & 64 & 295.9 & 0.179 & 7.27 & 3.7 \\
+$16\times16$ & 16 & 12,158 & 220 & 94.9 & 0.517 & 5.73 & 3.7 \\
+$4\times4$ & 8 & 1,433 & 0 & 130.2 & 0.137 & 63.76 & 7.4 \\
+$8\times8$ & 8 & 5,754 & 0 & 130.2 & 0.213 & 16.04 & 7.4 \\
+$16\times16$ & 8 & 22,842 & 0 & 130.2 & 0.522 & 4.11 & 7.4 \\
+$4\times4$ & 4 & 610 & 0 & 162.2 & 0.117 & 51.14 & 14.8 \\
+$8\times8$ & 4 & 2,427 & 0 & 162.2 & 0.149 & 12.84 & 14.8 \\
+$16\times16$ & 4 & 9,836 & 0 & 161.5 & 0.274 & 3.27 & 14.8 \\
+\hline
+\end{tabular}
+\end{table}

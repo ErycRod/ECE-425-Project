@@ -1,0 +1,13 @@
+build/
+*.jou
+*.log
+*.pb
+.Xil/
+xsim.dir/
+*.vvp
+waves.vcd
+__pycache__/
+.pytest_cache/
+.venv/
+node_modules/
+dist/

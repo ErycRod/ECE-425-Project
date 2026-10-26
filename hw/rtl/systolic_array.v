@@ -16,7 +16,7 @@
 module systolic_array #(
     parameter P   = 4,            // array is P x P PEs
     parameter B   = 8,            // operand width
-    parameter ACC = 2 * B + 8     // accumulator width
+    parameter ACC = 2 * B + 12    // accumulator width (safe for K <= 8191)
 )(
     input  wire                 clk,
     input  wire                 rst,

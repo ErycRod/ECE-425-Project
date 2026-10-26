@@ -1,5 +1,5 @@
 {
-  "note": "PLACEHOLDER rough estimate (params x tokens); replace with model/profile_smolvlm.py output",
+  "note": "PLACEHOLDER rough estimate (params x tokens); replaced automatically once eryc_model/profile_summary.json exists",
   "vision": {"params": 93000000, "tokens": 1024, "macs": 95232000000},
   "lm": {"params": 135000000},
   "prefill_tokens": 80

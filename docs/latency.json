@@ -1,0 +1,41 @@
+{
+  "perf_model": {
+    "one_design": {
+      "median_ms": 0.0012,
+      "p95_ms": 0.0013,
+      "max_ms": 0.0042,
+      "n": 1000
+    },
+    "all_9_designs": {
+      "median_ms": 0.0084,
+      "p95_ms": 0.0087,
+      "max_ms": 0.1433,
+      "n": 1000
+    }
+  },
+  "backend": {
+    "estimate (one slider move)": {
+      "median_ms": 1.1093,
+      "p95_ms": 23.8513,
+      "max_ms": 25.4845,
+      "n": 50
+    },
+    "sweep (all 9 designs)": {
+      "median_ms": 3.2489,
+      "p95_ms": 22.7434,
+      "max_ms": 26.9862,
+      "n": 50
+    },
+    "bandwidth_curve (3 lines x 40 pts)": {
+      "median_ms": 2.2567,
+      "p95_ms": 26.2542,
+      "max_ms": 26.9431,
+      "n": 50
+    }
+  },
+  "vivado_synthesis_per_design_s": {
+    "min": 28.1,
+    "max": 125.7,
+    "total": 474.9
+  }
+}

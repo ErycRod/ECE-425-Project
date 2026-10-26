@@ -8,7 +8,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 module mac_pe #(
     parameter B   = 8,            // operand width (signed)
-    parameter ACC = 2 * B + 8     // accumulator width: 2B + log2(max K), K <= 256
+    parameter ACC = 2 * B + 12    // accumulator width: never overflows for K <= 8191
+                                  // (SmolVLM's largest inner dimension is 3072)
 )(
     input  wire                  clk,
     input  wire                  rst,      // synchronous, active high
