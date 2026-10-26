@@ -31,7 +31,7 @@ the right *trends* but not final values. The model does not answer questions yet
 =======
 | `anh_web/` | Anh Tran | The interactive website (FastAPI backend + React frontend) | Controls, KPI cards and bottleneck lamps working; charts next. See [Website](#website-anh_web) |
 | `docs/` | Everyone | Figures and diagrams for the report | Two figures so far |
->>>>>>> 5117112 (Updated README.md instructions)
+
 
 ## How the pieces connect
 
