@@ -18,19 +18,19 @@ from pydantic import BaseModel
 
 import data
 
-# Don't leave a __pycache__ folder inside perf/ (that folder is not ours)
+
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(data.REPO_ROOT, "perf"))
 from perf_model import estimate, phase_time
 
-# ---- settings ----------------------------------------------------------------
+# settings
 ALLOWED_P = [4, 8, 16]
 ALLOWED_BITS = [16, 8, 4]
 
-# Zynq-7020 (xc7z020clg484-1). LUT and DSP limits match hw/scripts/run_sweep.py
+# LUT and DSP limits match hw/scripts/run_sweep.py
 CHIP_LIMITS = {"luts": 53200, "dsps": 220, "ffs": 106400, "bram": 140}
 
-# defaults from perf/perf_model.py
+#from perf/perf_model.py
 DEFAULT_F_MHZ = 100.0
 DEFAULT_BW_GBS = 1.0
 DEFAULT_UTIL = 0.8
@@ -40,12 +40,12 @@ BW_MIN = 0.25
 BW_MAX = 4.0
 BW_STEP = 0.05
 
-# what the hardware team says in their README / tradeoff chart
+# in README from team
 HW_TEAM_NOTES = [
     {"P": 16, "bits": 16, "note": "16x16 at 16-bit exceeds the chip's 220 DSPs (hardware team README)"},
 ]
 
-# figures from docs/ that the page is allowed to show
+# figures from docs/
 FIGURES = {
     "tradeoff": "tradeoff.png",
     "dataflow": "dataflow.png",
@@ -60,7 +60,7 @@ app.add_middleware(
 )
 
 
-# ---- request formats ---------------------------------------------------------
+# req format
 class EstimateRequest(BaseModel):
     P: int
     bits: int
@@ -85,7 +85,7 @@ class BandwidthCurveRequest(BaseModel):
     points: int = 40
 
 
-# ---- helpers -----------------------------------------------------------------
+# helper
 def design_number(P, bits):
     """Design numbers from the project README:
               4x4  8x8  16x16
@@ -235,7 +235,7 @@ def run_one_design(P, bits, bw_gbs, f_mhz_override, util, out_tokens):
     return result
 
 
-# ---- the model (not connected yet) -------------------------------------------
+# model (not connected still waiting)
 def answer(image_bytes, question):
     """Answer a question about an image.
     Eryc's model code will go here later. Only this function needs to change."""
@@ -246,7 +246,7 @@ def answer(image_bytes, question):
     }
 
 
-# ---- endpoints ---------------------------------------------------------------
+# endpoints
 @app.get("/api/health")
 def health():
     return {"status": "ok"}
