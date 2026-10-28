@@ -21,8 +21,8 @@ talk faster. Fewer bits do.
 | `hw/` | Lucius Casertano | Verilog matrix-multiply engine, testbench, Python model of it, Vivado scripts | Working: all 9 designs pass simulation (including worst-case overflow test); Vivado sweep → `results.json` |
 | `perf/` | Lucius Casertano | Performance model (TTFT, tokens/s, energy), tradeoff chart, latency + report-table scripts | Working; uses each design's real Fmax and power from `results.json`; workload numbers are a placeholder until Eryc's profile lands |
 | `eryc_model/` | Eryc Rodriguez | Running and profiling SmolVLM, 8/4-bit accuracy | Not started, see `eryc_model/README.md` |
-| `anh_web/` | Anh Tran | The interactive website | Backend working (FastAPI); web page in progress, see `anh_web/README.md` |
-| `docs/` | Everyone | Figures, architecture diagram, report sections | `architecture.png`, `dataflow.png`, `tradeoff.png`, `report/` |
+| `anh_web/` | Anh Tran | The interactive website (FastAPI backend + React frontend) | Controls, KPI cards and bottleneck lamps working; charts next. See [Website](#website-anh_web) |
+| `docs/` | Everyone | Figures, architecture diagram, report sections, video slides | `architecture.png`, `dataflow.png`, `tradeoff.png`, `report/`, `video/` |
 
 **Real vs. placeholder right now:** hardware numbers (simulation, synthesis) are real.
 The workload (how much math SmolVLM does) is a rough placeholder, so TTFT and tokens/s show
@@ -102,6 +102,89 @@ python -m uvicorn server:app --app-dir backend --port 8000
 iverilog -g2012 -DDUMP -P tb_systolic_array.P=4 -P tb_systolic_array.K=8 -o sim.vvp hw/rtl/*.v hw/tb/tb_systolic_array.v
 vvp -n sim.vvp && gtkwave waves.vcd
 ```
+
+## Website (`anh_web/`)
+
+A dark dashboard where you pick the array size (P), bits per weight and memory bandwidth, and see
+TTFT, tokens/s, answer time and whether each phase is compute- or memory-bound. The numbers are
+modelled FPGA estimates from `perf/perf_model.py`, not measured times.
+
+| Part | Status |
+| --- | --- |
+| Hardware controls (P, bits, bandwidth, advanced settings) | Working |
+| KPI cards (TTFT, tokens/s, answer time, energy) | Working (clock, power and energy use real Vivado data from `results.json`) |
+| Bottleneck lamps, target chip info | Working |
+| Tradeoff chart, bandwidth curve, phase breakdown | Next |
+| FPGA resources (LUT / DSP / FF / BRAM) | Data ready in `results.json` (sent by `/api/estimate`); card next |
+| Accuracy at 16 / 8 / 4 bits | Waiting on `eryc_model/accuracy.json` |
+| Ask the model (image + question) | Waiting on the model code in `eryc_model/` |
+
+**Needs:** Python 3.9+, Node.js 18+ (with npm). Commands are for Windows PowerShell.
+
+**First-time setup** (from the repo root):
+```powershell
+python -m venv anh_web\.venv
+.\anh_web\.venv\Scripts\python -m pip install -r requirements.txt
+cd anh_web\frontend
+npm install
+```
+The website's Python packages are in this root `requirements.txt`. `.venv/` and `node_modules/` are git-ignored.
+
+**Run it** (two PowerShell windows):
+```powershell
+# Window 1: backend on port 8000 (API docs at http://127.0.0.1:8000/docs)
+cd anh_web
+.\.venv\Scripts\python -m uvicorn server:app --app-dir backend --port 8000 --reload
+
+# Window 2: frontend on port 5173
+cd anh_web\frontend
+npm run dev
+```
+Then open http://localhost:5173. If the backend isn't running, the status bar lamp turns red and the
+page shows the command to start it.
+
+**Tests:**
+```powershell
+# backend (pytest, 20 tests): every number is checked against perf_model.py
+cd anh_web
+$env:PYTHONDONTWRITEBYTECODE = "1"
+.\.venv\Scripts\python -m pytest tests -v
+
+# frontend (Vitest, 10 tests): number formatting, "n/a" for missing values, comparison with design 1
+cd frontend
+npm test -- --run
+```
+
+**Quick demo check** (defaults: each design's Vivado Fmax from `results.json`, 1 GB/s, utilization 0.8, 32 output tokens):
+1. Start at 4×4, 16-bit (296 MHz): TTFT **28.27 s**, **3.7** tokens/s.
+2. Click 4-bit (162 MHz): tokens/s rises to **14.8**, but TTFT gets *slower* (**51.14 s**): 16-bit multipliers use DSP blocks and clock faster.
+3. Click 16×16 (still 4-bit): TTFT drops to **3.27 s**, tokens/s stays at 14.8.
+4. Drag the bandwidth slider to 4 GB/s: tokens/s follows it (about **59**); TTFT barely moves.
+
+**Where the numbers come from.** The website only displays these; it doesn't change them.
+Missing data shows "n/a" or "pending".
+
+| On the page | Comes from |
+| --- | --- |
+| TTFT, tokens/s, answer time, compute / memory bound | `perf/perf_model.py` (`estimate()`, `phase_time()`) |
+| Workload (MACs, parameters, tokens) | `eryc_model/profile_summary.json`, else `perf/example_profile.json` |
+| Clock | Advanced setting, else `fmax_mhz` from `results.json`, else 100 MHz |
+| LUTs, DSPs, FFs, BRAM, Fmax, power, fits on chip | `results.json` (chip limits match `hw/scripts/run_sweep.py`) |
+| Energy per answer | `estimate()` with `power_w` from `results.json` |
+| Accuracy | `eryc_model/accuracy.json` |
+
+**Placeholder data:** cards using placeholder input show an amber **PLACEHOLDER DATA** pill. The
+backend re-reads its data files when they change, so the site switches over by itself (no restart)
+when `results.json`, `eryc_model/profile_summary.json` or `eryc_model/accuracy.json` appear.
+
+```
+anh_web/backend/     server.py (FastAPI app, calls perf_model.py), data.py (loads the data files)
+anh_web/frontend/    React + Vite app: src/App.jsx, src/api.js, src/format.js, src/components/
+anh_web/tests/       backend tests (pytest)
+```
+
+Note: `npm audit` reports warnings in development tools only (Vite's esbuild, Vitest), not in the
+page itself. Upgrading them is planned after the midproject.
 
 ## Deadlines
 
