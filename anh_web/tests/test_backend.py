@@ -3,11 +3,13 @@
 The main thing we check: every number the website shows is exactly what
 Lucius's perf_model.py gives back. The backend must not change his numbers.
 """
+import os
+
 import pytest
 
 import data
 from conftest import write_json
-from perf_model import estimate, phase_time
+from perf_model import DEFAULT_RESULTS, design_clock_power, estimate, load_results, phase_time
 
 ALL_P = [4, 8, 16]
 ALL_BITS = [16, 8, 4]
@@ -97,6 +99,32 @@ def test_decode_phase_is_phase_time(client):
     t_decode, bound = phase_time(lm_params, lm_params * 8 / 8, 8, 100e6, 1e9, 0.8)
     assert result["phases"]["decode"]["time_s"] == t_decode
     assert result["phases"]["decode"]["bound"] == bound
+
+
+def test_real_results_match_perf_model(client, monkeypatch):
+    # use the hardware team's real results.json (skip if it is not there yet)
+    if not os.path.exists(DEFAULT_RESULTS):
+        pytest.skip("no results.json yet")
+    monkeypatch.setattr(data, "RESULTS_PATH", DEFAULT_RESULTS)
+    data.clear_cache()
+
+    profile = lucius_profile()
+    results = load_results(DEFAULT_RESULTS)
+    for P in ALL_P:
+        for bits in ALL_BITS:
+            clock_and_power = design_clock_power(results, P, bits, 100.0)
+            f_mhz = clock_and_power[0]
+            power_w = clock_and_power[1]
+            expected = estimate(profile, P, bits, f_mhz, 1.0, 0.8, 32, power_w)
+            result = ask_estimate(client, {"P": P, "bits": bits, "bw_gbs": 1.0})
+
+            assert result["f_mhz"] == f_mhz
+            assert result["ttft_s"] == expected["ttft_s"]
+            assert result["tokens_per_s"] == expected["tokens_per_s"]
+            assert result["answer_s"] == expected["answer_s"]
+            assert result["decode_bound"] == expected["decode_bound"]
+            if power_w is not None:
+                assert result["energy_J"] == expected["energy_J"]
 
 
 def test_values_from_handoff_table(client):
