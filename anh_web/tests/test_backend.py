@@ -298,14 +298,80 @@ def test_bad_inputs_give_422(client):
 
 
 # ---- ask + figures ---------------------------------------------------------------
-def test_ask_placeholder(client):
+def ask_model(client, question):
     files = {"image": ("test.png", b"fake image bytes", "image/png")}
-    response = client.post("/api/ask", data={"question": "What is in the picture?"}, files=files)
-    assert response.status_code == 200
-    body = response.json()
+    response = client.post("/api/ask", data={"question": question}, files=files)
+    assert response.status_code == 200, response.text
+    return response.json()
+
+
+def write_fake_model(path, code):
+    # a tiny stand-in for Eryc's eryc_model/vlm.py
+    file = open(path, "w")
+    file.write(code)
+    file.close()
+
+
+def test_ask_placeholder(client):
+    body = ask_model(client, "What is in the picture?")
     assert body["connected"] is False
     assert body["answer"] is None
+    assert body["time_s"] is None
     assert "not connected" in body["message"]
+    assert "eryc_model/vlm.py" in body["message"]
+
+
+def test_ask_with_fake_model(client, fake_files):
+    code = "def answer(image_bytes, question):\n    return ' ' + question + ' / ' + str(len(image_bytes)) + ' '\n"
+    write_fake_model(fake_files / "vlm.py", code)
+
+    body = ask_model(client, "What is it?")
+    assert body["connected"] is True
+    assert body["answer"] == "What is it? / 16"
+    assert body["message"] is None
+    assert body["time_s"] >= 0
+
+
+def test_ask_model_error(client, fake_files):
+    code = "def answer(image_bytes, question):\n    raise ValueError('out of memory')\n"
+    write_fake_model(fake_files / "vlm.py", code)
+
+    body = ask_model(client, "What is it?")
+    assert body["connected"] is True
+    assert body["answer"] is None
+    assert "out of memory" in body["message"]
+
+
+def test_ask_model_file_that_cannot_load(client, fake_files):
+    # e.g. torch is not installed yet
+    write_fake_model(fake_files / "vlm.py", "import not_a_real_package\n")
+
+    body = ask_model(client, "What is it?")
+    assert body["connected"] is False
+    assert body["answer"] is None
+    assert "Could not load" in body["message"]
+
+
+def test_ask_needs_image_and_question(client):
+    files = {"image": ("test.png", b"fake image bytes", "image/png")}
+    response = client.post("/api/ask", data={"question": "   "}, files=files)
+    assert response.status_code == 422
+
+    response = client.post("/api/ask", data={"question": "What is it?"})
+    assert response.status_code == 422
+
+    files = {"image": ("test.png", b"", "image/png")}
+    response = client.post("/api/ask", data={"question": "What is it?"}, files=files)
+    assert response.status_code == 422
+
+
+def test_model_file_flag(client, fake_files):
+    flags = client.get("/api/config").json()["flags"]
+    assert flags["model_file_found"] is False
+
+    write_fake_model(fake_files / "vlm.py", "def answer(image_bytes, question):\n    return 'ok'\n")
+    flags = client.get("/api/config").json()["flags"]
+    assert flags["model_file_found"] is True
 
 
 def test_figures(client):

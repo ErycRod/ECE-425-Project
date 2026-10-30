@@ -20,13 +20,14 @@ from fastapi.testclient import TestClient
 def fake_files(tmp_path, monkeypatch):
     """Point the teammates' data files at a temporary folder.
 
-    Tests write their own results.json / profile / accuracy files in there,
+    Tests write their own results.json / profile / accuracy / vlm.py files in there,
     so nothing is ever written into the real repo. Lucius's placeholder
     profile (perf/example_profile.json) is still read from the repo.
     """
     monkeypatch.setattr(data, "RESULTS_PATH", str(tmp_path / "results.json"))
     monkeypatch.setattr(data, "ERYC_PROFILE_PATH", str(tmp_path / "profile_summary.json"))
     monkeypatch.setattr(data, "ACCURACY_PATH", str(tmp_path / "accuracy.json"))
+    monkeypatch.setattr(data, "VLM_PATH", str(tmp_path / "vlm.py"))
     data.clear_cache()
     yield tmp_path
     data.clear_cache()

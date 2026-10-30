@@ -4,7 +4,10 @@
 
 async function request(method, path, body) {
   const options = { method: method, headers: {} };
-  if (body !== undefined) {
+  if (body instanceof FormData) {
+    // files: the browser sets the content type itself
+    options.body = body;
+  } else if (body !== undefined) {
     options.headers["Content-Type"] = "application/json";
     options.body = JSON.stringify(body);
   }
@@ -48,4 +51,12 @@ export function getEstimate(settings) {
 
 export function getSweep(settings) {
   return request("POST", "/api/sweep", settings);
+}
+
+// send an image and a question to the model
+export function askModel(imageFile, question) {
+  const form = new FormData();
+  form.append("image", imageFile);
+  form.append("question", question);
+  return request("POST", "/api/ask", form);
 }

@@ -7,8 +7,10 @@ functions, and sends the results to the web page. It does not change them.
 Run (from the anh_web folder):
   .venv\\Scripts\\python -m uvicorn server:app --app-dir backend --port 8000
 """
+import importlib.util
 import os
 import sys
+import time
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -200,6 +202,7 @@ def flags():
         "profile_note": profile_info["note"],
         "accuracy_pending": accuracy["pending"],
         "accuracy_source": accuracy["source"],
+        "model_file_found": os.path.exists(data.VLM_PATH),
     }
 
 
@@ -235,15 +238,54 @@ def run_one_design(P, bits, bw_gbs, f_mhz_override, util, out_tokens):
     return result
 
 
-# model (not connected still waiting)
+# model (Eryc's eryc_model/vlm.py, loaded the first time someone asks)
+# Everything that depends on Eryc's code is in load_model() and call_model()
+# (and data.VLM_PATH). If his file, function name or arguments end up
+# different, only change those.
+_model = {"path": None, "module": None}
+
+
+def load_model():
+    """Load Eryc's model file once. Returns (module, message); module is None if it can't be used."""
+    path = data.VLM_PATH
+    if not os.path.exists(path):
+        return None, "Model not connected yet (waiting for eryc_model/vlm.py)"
+
+    # already loaded, reuse it
+    if _model["path"] == path and _model["module"] is not None:
+        return _model["module"], None
+
+    try:
+        spec = importlib.util.spec_from_file_location("eryc_vlm", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception as error:
+        return None, "Could not load eryc_model/vlm.py: " + str(error)
+
+    _model["path"] = path
+    _model["module"] = module
+    return module, None
+
+
+def call_model(module, image_bytes, question):
+    """Ask Eryc's model. Change this if his function has a different name or arguments."""
+    return module.answer(image_bytes, question)
+
+
 def answer(image_bytes, question):
-    """Answer a question about an image.
-    Eryc's model code will go here later. Only this function needs to change."""
-    return {
-        "connected": False,
-        "answer": None,
-        "message": "Model not connected yet (pending integration with eryc_model)",
-    }
+    """Answer a question about an image with Eryc's model, and time it."""
+    module, message = load_model()
+    if module is None:
+        return {"connected": False, "answer": None, "message": message, "time_s": None}
+
+    start = time.perf_counter()
+    try:
+        text = call_model(module, image_bytes, question)
+    except Exception as error:
+        return {"connected": True, "answer": None, "message": "Model error: " + str(error), "time_s": None}
+    time_s = time.perf_counter() - start
+
+    return {"connected": True, "answer": str(text).strip(), "message": None, "time_s": time_s}
 
 
 # endpoints
@@ -350,11 +392,18 @@ def accuracy():
     return data.load_accuracy()
 
 
+# not async: the model can take a while, so FastAPI runs this in a separate thread
 @app.post("/api/ask")
-async def ask(question: str = Form(""), image: Optional[UploadFile] = File(None)):
-    image_bytes = None
-    if image is not None:
-        image_bytes = await image.read()
+def ask(question: str = Form(""), image: Optional[UploadFile] = File(None)):
+    if image is None:
+        raise HTTPException(status_code=422, detail="Please choose an image")
+    question = question.strip()
+    if question == "":
+        raise HTTPException(status_code=422, detail="Please type a question")
+
+    image_bytes = image.file.read()
+    if len(image_bytes) == 0:
+        raise HTTPException(status_code=422, detail="The image file is empty")
     return answer(image_bytes, question)
 
 

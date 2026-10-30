@@ -6,6 +6,7 @@ import OperatorPanel from "./components/OperatorPanel.jsx";
 import KpiCards from "./components/KpiCards.jsx";
 import BottleneckLamps from "./components/BottleneckLamps.jsx";
 import PlaceholderCard from "./components/PlaceholderCard.jsx";
+import AskPanel from "./components/AskPanel.jsx";
 
 const DEBOUNCE_MS = 100;
 const RETRY_MS = 3000;
@@ -257,11 +258,7 @@ export default function App() {
               title="Accuracy vs bits"
               text="Answer quality at 16, 8 and 4 bits (waiting on the model team)."
             />
-            <PlaceholderCard
-              title="Ask the model"
-              text="Upload an image, ask a question, see the answer."
-              wide={true}
-            />
+            <AskPanel estimate={estimate} flags={flags} />
             <PlaceholderCard
               title="From the hardware team"
               text="The tradeoff and dataflow figures from docs/."

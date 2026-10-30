@@ -7,6 +7,7 @@ we say so and the page shows "n/a" or "pending" (waiting on either Eryc or Luciu
   Vivado results : <repo>/results.json                    (else: not available yet)
   Workload       : <repo>/eryc_model/profile_summary.json  (else: <repo>/perf/example_profile.json)
   Accuracy       : <repo>/eryc_model/accuracy.json         (else: pending)
+  Model code     : <repo>/eryc_model/vlm.py                (else: not connected yet; loaded by server.py)
 
 Files are read again whenever they change on disk, so the site picks up new
 files without restarting.
@@ -23,6 +24,8 @@ RESULTS_PATH = os.path.join(REPO_ROOT, "results.json")
 ERYC_PROFILE_PATH = os.path.join(REPO_ROOT, "eryc_model", "profile_summary.json")
 LUCIUS_PROFILE_PATH = os.path.join(REPO_ROOT, "perf", "example_profile.json")
 ACCURACY_PATH = os.path.join(REPO_ROOT, "eryc_model", "accuracy.json")
+# Eryc's model code (change here if his file gets a different name)
+VLM_PATH = os.path.join(REPO_ROOT, "eryc_model", "vlm.py")
 DOCS_DIR = os.path.join(REPO_ROOT, "docs")
 
 _cache = {}
