@@ -89,7 +89,7 @@ python docs/make_architecture.py      # -> docs/architecture.png
 python perf/report_table.py           # -> docs/table_designs.tex (for the report)
 ```
 
-**Website backend** (Anh's; see `anh_web/README.md` for the page):
+**Website backend** (Anh's; see [Website](#website-anh_web)):
 ```bash
 cd anh_web
 python -m uvicorn server:app --app-dir backend --port 8000
@@ -150,7 +150,7 @@ cd anh_web
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .\.venv\Scripts\python -m pytest tests -v
 
-# frontend (Vitest, 10 tests): number formatting, "n/a" for missing values, comparison with design 1
+# frontend (Vitest, 11 tests): number formatting, "n/a" for missing values, comparison with 4×4 baselines
 cd frontend
 npm test -- --run
 ```
@@ -173,9 +173,9 @@ Missing data shows "n/a" or "pending".
 | Energy per answer | `estimate()` with `power_w` from `results.json` |
 | Accuracy | `eryc_model/accuracy.json` |
 
-**Placeholder data:** cards using placeholder input show an amber **PLACEHOLDER DATA** pill. The
-backend re-reads its data files when they change, so the site switches over by itself (no restart)
-when `results.json`, `eryc_model/profile_summary.json` or `eryc_model/accuracy.json` appear.
+**Placeholder data:** only the workload profile is a placeholder now; cards using it show an amber
+**PLACEHOLDER DATA** pill. The backend re-reads its data files when they change, so the site switches
+over by itself (no restart) when `eryc_model/profile_summary.json` or `eryc_model/accuracy.json` appear.
 
 ```
 anh_web/backend/     server.py (FastAPI app, calls perf_model.py), data.py (loads the data files)

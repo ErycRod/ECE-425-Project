@@ -180,7 +180,7 @@ def test_placeholder_profile_flag(client):
 
 def test_hw_team_note_for_design_3(client):
     result = ask_estimate(client, {"P": 16, "bits": 16, "bw_gbs": 1.0})
-    assert "220 DSPs" in result["hw_team_note"]
+    assert "all 220 DSPs" in result["hw_team_note"]
 
     result = ask_estimate(client, {"P": 8, "bits": 8, "bw_gbs": 1.0})
     assert result["hw_team_note"] is None

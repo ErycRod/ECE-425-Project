@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Badge from "./Badge.jsx";
-import { isMissing, formatNumber, compareText, findDesign1 } from "../format.js";
+import { isMissing, formatNumber, compareText, findDesign, shortDesignName } from "../format.js";
 
 const TWEEN_MS = 300;
 
@@ -92,11 +92,19 @@ function KpiCard(props) {
 }
 
 // The 4 headline numbers. They come straight from /api/estimate
-// (perf_model.py estimate()); the comparison uses design 1 from /api/sweep.
+// (perf_model.py estimate()); the comparisons use rows from /api/sweep.
+// TTFT and answer time: vs 4x4 at the same bits (shows the array size effect).
+// Tokens/s: vs 4x4/16-bit (shows the bits effect).
 export default function KpiCards(props) {
   const estimate = props.estimate;
-  const design1 = findDesign1(props.sweep);
-  const isDesign1 = estimate.design === 1;
+
+  const timeBase = findDesign(props.sweep, 4, estimate.bits);
+  const timeBaseName = shortDesignName(4, estimate.bits);
+  const isTimeBase = estimate.P === 4;
+
+  const rateBase = findDesign(props.sweep, 4, 16);
+  const rateBaseName = shortDesignName(4, 16);
+  const isRateBase = estimate.P === 4 && estimate.bits === 16;
 
   let profilePlaceholder = false;
   if (estimate.flags) {
@@ -106,12 +114,15 @@ export default function KpiCards(props) {
   const subtitle = "est. on FPGA design " + estimate.design;
 
   let baseTtft = null;
-  let baseRate = null;
   let baseAnswer = null;
-  if (design1) {
-    baseTtft = design1.ttft_s;
-    baseRate = design1.tokens_per_s;
-    baseAnswer = design1.answer_s;
+  if (timeBase) {
+    baseTtft = timeBase.ttft_s;
+    baseAnswer = timeBase.answer_s;
+  }
+
+  let baseRate = null;
+  if (rateBase) {
+    baseRate = rateBase.tokens_per_s;
   }
 
   // energy only exists when results.json has real power
@@ -131,7 +142,7 @@ export default function KpiCards(props) {
         decimals={2}
         unit="s"
         subtitle={subtitle}
-        compare={compareText("time", estimate.ttft_s, baseTtft, isDesign1)}
+        compare={compareText("time", estimate.ttft_s, baseTtft, isTimeBase, timeBaseName)}
         placeholder={profilePlaceholder}
       />
       <KpiCard
@@ -140,7 +151,7 @@ export default function KpiCards(props) {
         decimals={1}
         unit="tok/s"
         subtitle={subtitle}
-        compare={compareText("rate", estimate.tokens_per_s, baseRate, isDesign1)}
+        compare={compareText("rate", estimate.tokens_per_s, baseRate, isRateBase, rateBaseName)}
         placeholder={profilePlaceholder}
       />
       <KpiCard
@@ -149,7 +160,7 @@ export default function KpiCards(props) {
         decimals={2}
         unit="s"
         subtitle={subtitle + " · " + estimate.out_tokens + " tokens"}
-        compare={compareText("time", estimate.answer_s, baseAnswer, isDesign1)}
+        compare={compareText("time", estimate.answer_s, baseAnswer, isTimeBase, timeBaseName)}
         placeholder={profilePlaceholder}
       />
       <KpiCard

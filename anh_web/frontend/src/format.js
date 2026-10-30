@@ -46,13 +46,13 @@ export function shortDesignName(P, bits) {
   return P + "×" + P + "/" + bits + "-bit";
 }
 
-// design 1 (4x4, 16-bit) from the /api/sweep data
-export function findDesign1(sweep) {
+// one design (P, bits) from the /api/sweep data
+export function findDesign(sweep, P, bits) {
   if (sweep === null || sweep === undefined) {
     return null;
   }
   for (let i = 0; i < sweep.designs.length; i++) {
-    if (sweep.designs[i].design === 1) {
+    if (sweep.designs[i].P === P && sweep.designs[i].bits === bits) {
       return sweep.designs[i];
     }
   }
@@ -70,12 +70,12 @@ export function ratio(top, bottom) {
   return top / bottom;
 }
 
-// Compare the current design with design 1.
+// Compare the current design with a baseline design, e.g. "4×4/4-bit".
 // kind "time": smaller is better (TTFT, answer time) -> "× faster" / "× slower"
 // kind "rate": bigger is better (tokens/s)          -> "× higher" / "× lower"
-export function compareText(kind, currentValue, baseValue, isDesign1) {
-  if (isDesign1) {
-    return "baseline (4×4/16-bit)";
+export function compareText(kind, currentValue, baseValue, isBase, baseName) {
+  if (isBase) {
+    return "baseline (" + baseName + ")";
   }
 
   let howMuchBetter;
@@ -90,7 +90,7 @@ export function compareText(kind, currentValue, baseValue, isDesign1) {
 
   // looks the same after rounding
   if (howMuchBetter.toFixed(1) === "1.0") {
-    return "same as 4×4/16-bit";
+    return "same as " + baseName;
   }
 
   let betterWord;
@@ -104,8 +104,8 @@ export function compareText(kind, currentValue, baseValue, isDesign1) {
   }
 
   if (howMuchBetter > 1) {
-    return formatRatio(howMuchBetter) + " " + betterWord + " than 4×4/16-bit";
+    return formatRatio(howMuchBetter) + " " + betterWord + " than " + baseName;
   } else {
-    return formatRatio(1 / howMuchBetter) + " " + worseWord + " than 4×4/16-bit";
+    return formatRatio(1 / howMuchBetter) + " " + worseWord + " than " + baseName;
   }
 }

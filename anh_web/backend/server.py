@@ -40,9 +40,9 @@ BW_MIN = 0.25
 BW_MAX = 4.0
 BW_STEP = 0.05
 
-# in README from team
+# from the hardware team's report
 HW_TEAM_NOTES = [
-    {"P": 16, "bits": 16, "note": "16x16 at 16-bit exceeds the chip's 220 DSPs (hardware team README)"},
+    {"P": 16, "bits": 16, "note": "Uses all 220 DSPs; Vivado built the other 36 multipliers from LUTs and missed the 100 MHz target (94.9 MHz) (hardware team report)"},
 ]
 
 # figures from docs/

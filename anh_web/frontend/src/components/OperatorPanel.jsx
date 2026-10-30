@@ -157,6 +157,11 @@ export default function OperatorPanel(props) {
           A bigger array makes the first word come sooner (prefill is compute-bound), but it
           doesn't make the model talk faster. Fewer bits do (decode is memory-bound).
         </p>
+        <p>
+          One twist: 16-bit multipliers use the chip's DSP blocks and run near 296 MHz, but
+          8-bit and 4-bit ones are built from LUTs and only reach 130–162 MHz. So fewer bits
+          can make the first word slower (4×4: 28.3 s at 16-bit, 63.8 s at 8-bit).
+        </p>
       </div>
     </aside>
   );
