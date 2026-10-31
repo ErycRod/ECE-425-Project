@@ -9,3 +9,8 @@ python-multipart>=0.0.9
 # website tests (anh_web)
 pytest>=7.0
 httpx>=0.27
+# SmolVLM model (eryc_model)
+torch
+transformers
+accelerate
+Pillow
