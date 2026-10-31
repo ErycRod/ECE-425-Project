@@ -1,0 +1,11 @@
+{
+  "note": "profiled SmolVLM-256M using Image.png; vision MACs include linear, convolution and attention operations",
+  "vision": {
+    "params": 93510912,
+    "macs": 1395646267392
+  },
+  "lm": {
+    "params": 134588736
+  },
+  "prefill_tokens": 877
+}
