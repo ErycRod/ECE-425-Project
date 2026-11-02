@@ -50,7 +50,7 @@ def main():
                         textcoords="offset points", xytext=(6, 6), fontsize=8, color=MUTED)
     ax.set_xscale("log")
     from matplotlib.ticker import FixedLocator, NullLocator, FuncFormatter
-    ax.xaxis.set_major_locator(FixedLocator([1, 2, 5, 10, 20, 50, 100, 200]))
+    ax.xaxis.set_major_locator(FixedLocator([1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000]))
     ax.xaxis.set_minor_locator(NullLocator())
     ax.xaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}"))
     ax.set_xlabel("Time to first token (s, log scale)  ← better", color=INK)
@@ -66,7 +66,7 @@ def main():
                  fontsize=12, color=INK)
     clock = "Vivado Fmax per design" if results else f"{a.f_mhz:.0f} MHz"
     fig.text(0.01, 0.01, f"{clock}, {a.bw_gbs} GB/s, util {a.util}. "
-             f"Workload: {'PLACEHOLDER estimate' if 'PLACEHOLDER' in prof.get('note', '') else prof.get('note', '')}", fontsize=7, color=MUTED)
+             f"Workload: {'PLACEHOLDER estimate' if 'PLACEHOLDER' in prof.get('note', '') else 'measured SmolVLM-256M profile (eryc_model/profile_summary.json)'}", fontsize=7, color=MUTED)
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     os.makedirs(os.path.dirname(a.out) or ".", exist_ok=True)
     fig.savefig(a.out, dpi=200, facecolor="white")

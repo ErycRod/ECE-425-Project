@@ -51,9 +51,9 @@ ax.text(0.3, 19.0, "OFFLINE  (precomputed once, stored as JSON)", fontsize=6, co
 ax.plot([0, 100], [20.6, 20.6], color="#d9d8d4", linewidth=0.8, linestyle=(0, (2, 2)))
 
 # live row
-box(1, 27, 20, 22, "Browser page", "image + question\nsliders: array size P,\nprecision B, memory\nbandwidth", "Anh (website)", done=False)
+box(1, 27, 20, 22, "Browser page", "image + question\nsliders: array size P,\nprecision B, memory\nbandwidth", "Anh (website)")
 box(25.5, 27, 20, 22, "FastAPI backend", "/api/estimate\n/api/sweep\n/api/bandwidth_curve\n/api/ask", "Anh (website)")
-box(50, 38.5, 20, 10.5, "SmolVLM-256M engine", "PyTorch, answers\nthe question", "Eryc (model)", done=False)
+box(50, 38.5, 20, 10.5, "SmolVLM-256M engine", "PyTorch, answers\nthe question", "Eryc (model)")
 box(50, 27, 20, 10, "Performance model", "roofline per phase:\nvision / prefill / decode", "Lucius (hardware)")
 box(74.5, 27, 24, 22, "Charts + readouts", "TTFT, tokens/s, energy,\nLUT / DSP use vs. chip,\ncompute- vs memory-bound,\nsystolic dataflow view", "Anh (website)", done=False)
 arrow(21.5, 38, 25, 38, "HTTP", 0, 2.4)

@@ -107,12 +107,12 @@ card(ax, 12, 16, 82, 70, edge=AQUA)
 card(ax, 98, 16, 82, 70, edge=BLUE)
 ax.text(17, 79, "Working now (Nov 1)", fontsize=28, color=AQUA, weight="bold", va="center")
 ax.text(103, 79, "By the final (Dec 11)", fontsize=28, color=BLUE, weight="bold", va="center")
-now = ["Web page ↔ FastAPI backend ↔ performance model,\nupdates in ~1–3 ms",
+now = ["Web page ↔ FastAPI backend ↔ performance model,\nupdates in ~1–3 ms; SmolVLM answers questions",
        "Verilog systolic array: all 9 designs pass\nsimulation, incl. worst-case overflow test",
-       "Real Vivado clock, LUT/DSP and power numbers\nfeed every estimate",
-       "Placeholder: SmolVLM workload profile,\naccuracy at 8/4 bits, question answering"]
-nxt = ["Connect SmolVLM: upload an image,\nask a question, see the answer",
-       "Real per-layer profile and 16/8/4-bit accuracy",
+       "Real Vivado numbers + measured SmolVLM workload\n(vision encoder = 92% of time to first token)",
+       "Placeholder: accuracy at 16 / 8 / 4 bits"]
+nxt = ["Accuracy at 16 / 8 / 4 bits on a small\nimage-question set",
+       "Shorter waits: DSP packing for 8-bit,\nsmaller images, caching image embeddings",
        "Layer-by-layer model map and an animated\nsystolic-array dataflow view",
        "Tradeoff + bandwidth charts; user study\nwith classmates"]
 for items, x, color in ((now, 17, AQUA), (nxt, 103, BLUE)):

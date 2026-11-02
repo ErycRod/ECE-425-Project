@@ -24,9 +24,9 @@ talk faster. Fewer bits do.
 | `anh_web/` | Anh Tran | The interactive website (FastAPI backend + React frontend) | Controls, KPI cards and bottleneck lamps working; charts next. See [Website](#website-anh_web) |
 | `docs/` | Everyone | Figures, architecture diagram, report sections, video slides | `architecture.png`, `dataflow.png`, `tradeoff.png`, `report/`, `video/` |
 
-**Real vs. placeholder right now:** hardware numbers (simulation, synthesis) are real.
-The workload (how much math SmolVLM does) is a rough placeholder, so TTFT and tokens/s show
-the right *trends* but not final values. The model does not answer questions yet.
+**Real vs. placeholder right now:** hardware numbers (simulation, synthesis) are real, the workload
+is measured from SmolVLM (`eryc_model/profile_summary.json`), and SmolVLM answers questions about an
+uploaded image on the page. Still to come: accuracy at 16 / 8 / 4 bits.
 
 ## How the pieces connect
 
@@ -155,11 +155,12 @@ cd frontend
 npm test -- --run
 ```
 
-**Quick demo check** (defaults: each design's Vivado Fmax from `results.json`, 1 GB/s, utilization 0.8, 32 output tokens):
-1. Start at 4×4, 16-bit (296 MHz): TTFT **28.27 s**, **3.7** tokens/s.
-2. Click 4-bit (162 MHz): tokens/s rises to **14.8**, but TTFT gets *slower* (**51.14 s**): 16-bit multipliers use DSP blocks and clock faster.
-3. Click 16×16 (still 4-bit): TTFT drops to **3.27 s**, tokens/s stays at 14.8.
-4. Drag the bandwidth slider to 4 GB/s: tokens/s follows it (about **59**); TTFT barely moves.
+**Quick demo check** (defaults: each design's Vivado Fmax from `results.json`, measured SmolVLM workload, 1 GB/s, utilization 0.8, 32 output tokens):
+1. Start at 4×4, 16-bit (296 MHz): TTFT **399.92 s**, **3.7** tokens/s.
+2. Click 4-bit (162 MHz): tokens/s rises to **14.9**, but TTFT gets *slower* (**729.14 s**): 16-bit multipliers use DSP blocks and clock faster.
+3. Click 16×16 (still 4-bit): TTFT drops to **45.83 s**, tokens/s stays at 14.9.
+4. Drag the bandwidth slider to 4 GB/s: tokens/s follows it (about **59.4**); TTFT barely moves.
+5. Bottleneck panel: the vision encoder is about 92% of TTFT in every design.
 
 **Where the numbers come from.** The website only displays these; it doesn't change them.
 Missing data shows "n/a" or "pending".
@@ -173,8 +174,8 @@ Missing data shows "n/a" or "pending".
 | Energy per answer | `estimate()` with `power_w` from `results.json` |
 | Accuracy | `eryc_model/accuracy.json` |
 
-**Placeholder data:** only the workload profile is a placeholder now; cards using it show an amber
-**PLACEHOLDER DATA** pill. The backend re-reads its data files when they change, so the site switches
+**Placeholder data:** cards using placeholder input show an amber **PLACEHOLDER DATA** pill (none
+should show now that the measured profile is in). The backend re-reads its data files when they change, so the site switches
 over by itself (no restart) when `eryc_model/profile_summary.json` or `eryc_model/accuracy.json` appear.
 
 ```
