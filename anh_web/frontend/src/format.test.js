@@ -7,6 +7,8 @@ import {
   findDesign,
   ratio,
   compareText,
+  humanDuration,
+  smartDecimals,
 } from "./format.js";
 
 // numbers below are from perf/perf_model.py's table (each design's Vivado Fmax, 1 GB/s, placeholder profile)
@@ -78,5 +80,24 @@ describe("comparison with a baseline design", () => {
 
   it("shows nothing when a value is missing", () => {
     expect(compareText("time", null, 51.14, false, "4×4/4-bit")).toBe("");
+  });
+});
+
+describe("plain-language numbers", () => {
+  it("durations read like a person would say them", () => {
+    expect(humanDuration(8.63)).toBe("8.6 s");
+    expect(humanDuration(45.8)).toBe("46 s");
+    expect(humanDuration(182.3)).toBe("3 min 2 s");
+    expect(humanDuration(120)).toBe("2 min");
+    expect(humanDuration(3725)).toBe("1 h 2 min");
+    expect(humanDuration(null)).toBe("n/a");
+  });
+
+  it("big numbers get fewer decimals", () => {
+    expect(smartDecimals(182.3)).toBe(0);
+    expect(smartDecimals(29.7)).toBe(1);
+    expect(smartDecimals(3.71)).toBe(1);
+    expect(smartDecimals(0.27)).toBe(2);
+    expect(smartDecimals(null)).toBe(0);
   });
 });

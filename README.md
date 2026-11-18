@@ -105,12 +105,19 @@ vvp -n sim.vvp && gtkwave waves.vcd
 
 ## Website (`anh_web/`)
 
-A dark dashboard where you pick the array size (P), bits per weight and memory bandwidth, and see
-TTFT, tokens/s, answer time and whether each phase is compute- or memory-bound. The numbers are
+A learning site in three levels mapped to Bloom's Taxonomy. Beginner explains the model and the
+systolic array step by step; Intermediate lets you pick the array size (P), bits per weight and
+memory bandwidth and see TTFT, tokens/s, answer time and whether each phase is compute- or
+memory-bound, with tasks to complete; Advanced (in progress) lets you build and rank your own design. The numbers are
 modelled FPGA estimates from `perf/perf_model.py`, not measured times.
 
 | Part | Status |
 | --- | --- |
+| **Levels** (tabs in the top bar, address `#/home`, `#/beginner`, ...): Home · Beginner (Remember, Understand) · Intermediate (Apply, Analyze) · Advanced (Evaluate, Create) · Code | Working (`src/levels.js`, `src/pages/`) |
+| Home: the question the tool answers, image→vision→prefill→decode strip, why edge, who it's for, what to know first, level cards | Working |
+| Beginner: 5 short steps with a quick-check question each, clickable 3×3 matrix multiply, compute- vs memory-bound | Working (systolic-array animation next) |
+| Intermediate: one plain-language answer, 4 headline numbers vs the 4×4/16-bit start, one chart at a time, 5 tasks that tick themselves off | Working |
+| Advanced: build your own design, generate its Verilog, rank it, challenges | Planned (placeholder page) |
 | Hardware controls (P, bits, bandwidth, advanced settings) | Working |
 | KPI cards (TTFT, tokens/s, answer time, energy) | Working (clock, power and energy use real Vivado data from `results.json`) |
 | Bottleneck lamps, target chip info | Working |
@@ -120,7 +127,7 @@ modelled FPGA estimates from `perf/perf_model.py`, not measured times.
 | FPGA resources (LUT / DSP / FF / BRAM meters vs chip limits, Fmax, power) | Working |
 | Every chart: hover tooltips, info tip, one-line takeaway, **Table** button with the same numbers | Working |
 | Icons + short labels with (i) tooltips instead of long paragraphs | Working (inline SVG in `components/Icon.jsx`, no extra npm package) |
-| **Developer view** (top-right toggle): roofline math with live numbers checked against the API, Verilog and Python source, raw API JSON + curl | Working (`/api/source/<name>`, fixed list of files) |
+| **Code page** (developer view): roofline math with live numbers checked against the API, Verilog and Python source, raw API JSON + curl | Working (`/api/source/<name>`, fixed list of files) |
 | How it works: architecture + dataflow figures from `docs/` | Working |
 | Accuracy at 16 / 8 / 4 bits | Waiting on `eryc_model/accuracy.json` |
 | Ask the model (image + question) | Working (`eryc_model/vlm.py`) |
@@ -156,7 +163,7 @@ cd anh_web
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .\.venv\Scripts\python -m pytest tests -v
 
-# frontend (Vitest, 20 tests): number formatting, "n/a" for missing values, 4×4 baselines, chart scales/ticks
+# frontend (Vitest, 22 tests): number formatting, "n/a" for missing values, 4×4 baselines, plain-language durations, chart scales/ticks
 cd frontend
 npm test -- --run
 ```
@@ -187,6 +194,7 @@ over by itself (no restart) when `eryc_model/profile_summary.json` or `eryc_mode
 ```
 anh_web/backend/     server.py (FastAPI app, calls perf_model.py), data.py (loads the data files)
 anh_web/frontend/    React + Vite app: src/App.jsx, src/api.js, src/format.js, src/components/
+                     src/pages/ (Home, Beginner, Intermediate, Advanced, Code) + src/levels.js
                      src/charts/ (scales, tooltip, width hook for the hand-drawn SVG charts)
                      src/highlight.js (code colouring for the developer view)
 anh_web/tests/       backend tests (pytest)

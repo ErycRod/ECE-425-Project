@@ -1,7 +1,6 @@
 import { useState } from "react";
 import Icon from "./Icon.jsx";
 import InfoTip from "./InfoTip.jsx";
-import { findDesign, formatSeconds } from "../format.js";
 
 // Sidebar with the hardware controls: array size P, bits, memory bandwidth,
 // and the advanced settings (clock, utilization, output tokens).
@@ -172,28 +171,14 @@ export default function OperatorPanel(props) {
         {advancedSection}
       </div>
 
-      <Lesson sweep={props.sweep} />
+      <Lesson />
     </aside>
   );
 }
 
-// "The main lesson" box. The example numbers come from the live sweep, so they
-// always match the charts (no numbers typed in by hand).
-function Lesson(props) {
-  let twist = null;
-  const d16 = findDesign(props.sweep, 4, 16);
-  const d8 = findDesign(props.sweep, 4, 8);
-  if (d16 && d8) {
-    twist = (
-      <p className="lesson-twist">
-        <Icon name="sparkle" size={13} /> Twist: 16-bit multipliers use DSP blocks ({Math.round(d16.f_mhz)} MHz);
-        8-bit ones are LUTs ({Math.round(d8.f_mhz)} MHz). At 4×4 the first word takes{" "}
-        <span className="mono">{formatSeconds(d16.ttft_s)} s</span> at 16-bit but{" "}
-        <span className="mono">{formatSeconds(d8.ttft_s)} s</span> at 8-bit.
-      </p>
-    );
-  }
-
+// "The main lesson" box: the two rules of thumb. (The 16- vs 8-bit clock "twist"
+// is left out here because the Intermediate tasks ask about it.)
+function Lesson() {
   return (
     <div className="lesson">
       <h2 className="card-title card-title-icon">
@@ -209,7 +194,6 @@ function Lesson(props) {
           <span className="lesson-why"> (decode is memory-bound)</span>
         </li>
       </ul>
-      {twist}
     </div>
   );
 }

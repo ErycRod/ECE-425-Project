@@ -109,3 +109,44 @@ export function compareText(kind, currentValue, baseValue, isBase, baseName) {
     return formatRatio(1 / howMuchBetter) + " " + worseWord + " than " + baseName;
   }
 }
+
+// Plain-language duration: 45.8 -> "46 s", 182.3 -> "3 min 2 s", 3725 -> "1 h 2 min".
+// Under 10 s keeps one decimal (e.g. "8.6 s").
+export function humanDuration(seconds) {
+  if (isMissing(seconds)) {
+    return "n/a";
+  }
+  if (seconds < 10) {
+    return seconds.toFixed(1) + " s";
+  }
+  const total = Math.round(seconds);
+  if (total < 60) {
+    return total + " s";
+  }
+  if (total < 3600) {
+    const minutes = Math.floor(total / 60);
+    const rest = total % 60;
+    if (rest === 0) {
+      return minutes + " min";
+    }
+    return minutes + " min " + rest + " s";
+  }
+  const hours = Math.floor(total / 3600);
+  const minutes = Math.round((total % 3600) / 60);
+  return hours + " h " + minutes + " min";
+}
+
+// How many decimals a headline number needs: 182.3 -> 0, 29.7 -> 1, 3.71 -> 1, 0.27 -> 2.
+export function smartDecimals(value) {
+  if (isMissing(value)) {
+    return 0;
+  }
+  const size = Math.abs(value);
+  if (size >= 100) {
+    return 0;
+  }
+  if (size >= 1) {
+    return 1;
+  }
+  return 2;
+}

@@ -233,7 +233,7 @@ export default function BandwidthChart(props) {
             Memory bandwidth (GB/s)
           </text>
           <text transform={"translate(13," + (M.top + plotBottom) / 2 + ") rotate(-90)"} className="axis-title" textAnchor="middle">
-            Decode tok/s
+            Words/s
           </text>
           {lines}
           {nowMarker}

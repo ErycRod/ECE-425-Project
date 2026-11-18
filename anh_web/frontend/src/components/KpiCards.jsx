@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Badge from "./Badge.jsx";
 import Icon from "./Icon.jsx";
 import InfoTip from "./InfoTip.jsx";
-import { isMissing, formatNumber, compareText, findDesign, shortDesignName } from "../format.js";
+import { isMissing, formatNumber, compareText, findDesign, smartDecimals, humanDuration } from "../format.js";
 
 const TWEEN_MS = 300;
 
@@ -55,7 +55,8 @@ function useTweenedNumber(target) {
 function KpiCard(props) {
   const shown = useTweenedNumber(props.value);
 
-  let numberText = formatNumber(shown, props.decimals);
+  // decimals follow the real value (not the sliding one), so the width doesn't jump
+  let numberText = formatNumber(shown, smartDecimals(props.value));
   let numberClass = "kpi-number mono";
   if (isMissing(props.value)) {
     numberClass = "kpi-number kpi-missing mono";
@@ -66,8 +67,9 @@ function KpiCard(props) {
     unit = <span className="kpi-unit">{props.unit}</span>;
   }
 
+  // no comparison line on the starting design itself (it would just say "baseline" 4 times)
   let compare = null;
-  if (props.compare) {
+  if (props.compare && !props.compare.startsWith("baseline")) {
     compare = <div className="kpi-compare">{props.compare}</div>;
   }
 
@@ -102,37 +104,31 @@ function KpiCard(props) {
 }
 
 // The 4 headline numbers. They come straight from /api/estimate
-// (perf_model.py estimate()); the comparisons use rows from /api/sweep.
-// TTFT and answer time: vs 4x4 at the same bits (shows the array size effect).
-// Tokens/s: vs 4x4/16-bit (shows the bits effect).
+// (perf_model.py estimate()). Every comparison is against the same starting
+// design, 4x4/16-bit (design 1) at the same settings, so they're easy to read together.
 export default function KpiCards(props) {
   const estimate = props.estimate;
 
-  const timeBase = findDesign(props.sweep, 4, estimate.bits);
-  const timeBaseName = shortDesignName(4, estimate.bits);
-  const isTimeBase = estimate.P === 4;
-
-  const rateBase = findDesign(props.sweep, 4, 16);
-  const rateBaseName = shortDesignName(4, 16);
-  const isRateBase = estimate.P === 4 && estimate.bits === 16;
+  const base = findDesign(props.sweep, 4, 16);
+  const baseName = "the 4×4/16-bit start";
+  const isBase = estimate.P === 4 && estimate.bits === 16;
 
   let profilePlaceholder = false;
   if (estimate.flags) {
     profilePlaceholder = estimate.flags.profile_placeholder;
   }
 
-  const subtitle = "est. on FPGA design " + estimate.design;
-
   let baseTtft = null;
   let baseAnswer = null;
-  if (timeBase) {
-    baseTtft = timeBase.ttft_s;
-    baseAnswer = timeBase.answer_s;
-  }
-
   let baseRate = null;
-  if (rateBase) {
-    baseRate = rateBase.tokens_per_s;
+  let baseEnergy = null;
+  if (base) {
+    baseTtft = base.ttft_s;
+    baseAnswer = base.answer_s;
+    baseRate = base.tokens_per_s;
+    if (base.energy_J !== undefined) {
+      baseEnergy = base.energy_J;
+    }
   }
 
   // energy only exists when results.json has real power
@@ -144,54 +140,66 @@ export default function KpiCards(props) {
     energyNote = estimate.energy_note;
   }
 
+  let energyCompare = null;
+  if (energy !== null && baseEnergy !== null) {
+    energyCompare = compareText("time", energy, baseEnergy, isBase, baseName)
+      .replace("faster", "less")
+      .replace("slower", "more");
+  }
+
   return (
     <div className="kpi-row">
       <KpiCard
-        title="Time to first token"
+        title="First word"
         icon="clock"
-        info="How long until the first word appears: vision encoder + LM prefill + one decode step. A bigger array shortens it."
+        info="Time to first token (TTFT): vision encoder + LM prefill + one decode step. A bigger array shortens it."
         value={estimate.ttft_s}
-        decimals={2}
         unit="s"
-        subtitle={subtitle}
-        compare={compareText("time", estimate.ttft_s, baseTtft, isTimeBase, timeBaseName)}
+        subtitle={aboutTime(estimate.ttft_s, "until the first word appears")}
+        compare={compareText("time", estimate.ttft_s, baseTtft, isBase, baseName)}
         placeholder={profilePlaceholder}
       />
       <KpiCard
-        title="Decode speed"
+        title="Writing speed"
         icon="gauge"
-        info="Words per second after the first one. Each word re-reads every weight from memory, so fewer bits or more bandwidth speed it up."
+        info="Decode speed in tokens (about words) per second. Each word re-reads every weight from memory, so fewer bits or more bandwidth speed it up."
         value={estimate.tokens_per_s}
-        decimals={1}
-        unit="tok/s"
-        subtitle={subtitle}
-        compare={compareText("rate", estimate.tokens_per_s, baseRate, isRateBase, rateBaseName)}
+        unit="words/s"
+        subtitle="after the first word"
+        compare={compareText("rate", estimate.tokens_per_s, baseRate, isBase, baseName)}
         placeholder={profilePlaceholder}
       />
       <KpiCard
-        title="Answer time"
+        title="Whole answer"
         icon="hourglass"
-        info="Time for the whole answer: time to first token plus one decode step for each remaining word."
+        info="First word + one decode step for each remaining word."
         alignTip="right"
         value={estimate.answer_s}
-        decimals={2}
         unit="s"
-        subtitle={subtitle + " · " + estimate.out_tokens + " tokens"}
-        compare={compareText("time", estimate.answer_s, baseAnswer, isTimeBase, timeBaseName)}
+        subtitle={aboutTime(estimate.answer_s, "for a " + estimate.out_tokens + "-word answer")}
+        compare={compareText("time", estimate.answer_s, baseAnswer, isBase, baseName)}
         placeholder={profilePlaceholder}
       />
       <KpiCard
-        title="Energy per answer"
+        title="Energy"
         icon="zap"
-        info="Vivado's power estimate for this design × answer time. Joules for one full answer."
+        info="Vivado's power estimate for this design × the whole answer time."
         alignTip="right"
         value={energy}
-        decimals={2}
         unit="J"
-        subtitle={subtitle}
+        subtitle="per answer"
+        compare={energyCompare}
         note={energyNote}
         placeholder={false}
       />
     </div>
   );
+}
+
+// "about 6 min 40 s until the first word appears" (only adds the minutes when it's over a minute)
+function aboutTime(seconds, text) {
+  if (isMissing(seconds) || seconds < 60) {
+    return text;
+  }
+  return "about " + humanDuration(seconds) + " " + text;
 }

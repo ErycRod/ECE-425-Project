@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import Icon from "./Icon.jsx";
 import { askModel } from "../api.js";
 import { formatSeconds, shortDesignName } from "../format.js";
 
@@ -106,7 +107,9 @@ export default function AskPanel(props) {
   return (
     <section className="card span-2">
       <div className="card-header">
-        <h2 className="card-title">Ask the model</h2>
+        <h2 className="card-title card-title-icon">
+          <Icon name="image" size={15} /> Ask the model
+        </h2>
         {statusPill}
       </div>
 
