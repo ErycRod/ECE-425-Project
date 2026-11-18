@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { designLabel } from "../format.js";
 import Icon from "./Icon.jsx";
+import LevelNav from "./LevelNav.jsx";
 
 // "Zynq-7020 (xc7z020clg484-1)" -> "xc7z020clg484-1"
 function partNumber(chipText) {
@@ -73,8 +73,8 @@ function ChipInfo(props) {
 
   return (
     <span className="chip-info" ref={boxRef}>
-      <span className="status-muted chip-label">
-        <Icon name="cpu" size={14} /> Target chip: Zynq-7020 FPGA
+      <span className="status-muted chip-label" title="Target chip">
+        <Icon name="cpu" size={14} /> Zynq-7020 FPGA
       </span>
       <button
         className={buttonClass}
@@ -89,15 +89,10 @@ function ChipInfo(props) {
   );
 }
 
-// Top bar: title, chip, current design, backend lamp, placeholder alert.
+// Top bar: title, chip, level tabs, backend lamp, placeholder alert.
 export default function StatusBar(props) {
   const config = props.config;
   const flags = props.flags;
-
-  let designText = "";
-  if (props.design) {
-    designText = designLabel(props.design, props.P, props.bits);
-  }
 
   // backend lamp
   let lampClass = "lamp lamp-wait";
@@ -133,24 +128,17 @@ export default function StatusBar(props) {
   return (
     <header className="status-bar">
       <div className="status-left">
-        <span className="logo-mark"></span>
-        <span className="app-name">EdgeVLM Lab</span>
+        <a className="brand" href="#/home">
+          <span className="logo-mark"></span>
+          <span className="app-name">EdgeVLM Lab</span>
+        </a>
         <span className="status-divider"></span>
         <ChipInfo config={config} />
       </div>
 
-      <div className="status-center mono">{designText}</div>
+      <LevelNav page={props.page} />
 
       <div className="status-right">
-        <button
-          className={props.devOpen ? "dev-toggle dev-toggle-on" : "dev-toggle"}
-          type="button"
-          onClick={props.onToggleDev}
-          aria-pressed={props.devOpen === true}
-          title="Show the Verilog, the roofline math and the raw API data behind the numbers"
-        >
-          <Icon name="code" size={14} /> Developer view
-        </button>
         <span className="status-item">
           <span className={lampClass}></span>
           {lampText}

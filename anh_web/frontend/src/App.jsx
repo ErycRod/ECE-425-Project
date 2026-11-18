@@ -1,18 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { getConfig, getEstimate, getSweep, getBandwidthCurve } from "./api.js";
-import { designLabel } from "./format.js";
+import { usePage } from "./levels.js";
 import StatusBar from "./components/StatusBar.jsx";
 import OperatorPanel from "./components/OperatorPanel.jsx";
-import KpiCards from "./components/KpiCards.jsx";
-import BottleneckLamps from "./components/BottleneckLamps.jsx";
-import PlaceholderCard from "./components/PlaceholderCard.jsx";
-import AskPanel from "./components/AskPanel.jsx";
-import TradeoffChart from "./components/TradeoffChart.jsx";
-import BandwidthChart from "./components/BandwidthChart.jsx";
-import PhaseBreakdown from "./components/PhaseBreakdown.jsx";
-import ResourcesCard from "./components/ResourcesCard.jsx";
-import FiguresCard from "./components/FiguresCard.jsx";
-import DevView from "./components/DevView.jsx";
+import HomePage from "./pages/HomePage.jsx";
+import BeginnerPage from "./pages/BeginnerPage.jsx";
+import IntermediatePage from "./pages/IntermediatePage.jsx";
+import AdvancedPage from "./pages/AdvancedPage.jsx";
+import CodePage from "./pages/CodePage.jsx";
 
 const DEBOUNCE_MS = 100;
 const RETRY_MS = 3000;
@@ -64,8 +59,8 @@ export default function App() {
   const [inputError, setInputError] = useState(null);
   const [curve, setCurve] = useState(null);
 
-  // developer view (code, math and raw JSON) open or closed
-  const [devOpen, setDevOpen] = useState(false);
+  // which page is showing (Home, Beginner, Intermediate, Advanced, Code)
+  const [page] = usePage();
 
   // so an old, slow reply can't overwrite a newer one
   const requestNumber = useRef(0);
@@ -185,11 +180,6 @@ export default function App() {
     flags = config.flags;
   }
 
-  let design = null;
-  if (estimate) {
-    design = estimate.design;
-  }
-
   // sidebar
   let sidebar;
   if (config) {
@@ -238,92 +228,60 @@ export default function App() {
     );
   }
 
-  // header line + KPI cards + lamps once numbers have arrived
-  let header = null;
-  let kpis = null;
-  let charts = null;
-  let devView = null;
-  let lamps = <PlaceholderCard title="Bottleneck status" text="Waiting for the backend." />;
-  if (estimate) {
-    header = (
-      <div className="estimate-header">
-        <span>
-          Estimated on FPGA {designLabel(estimate.design, estimate.P, estimate.bits).toLowerCase()}
-        </span>
-        <span className="estimate-meta mono">
-          {estimate.f_mhz} MHz ({estimate.f_mhz_source}) · {estimate.bw_gbs.toFixed(2)} GB/s · util{" "}
-          {estimate.util}
-        </span>
-        <span className="estimate-note">
-          Modelled with the hardware team's performance model, not measured times.
-        </span>
+  // the page itself
+  let content;
+  let withSidebar = false;
+  if (page === "beginner") {
+    content = <BeginnerPage sweep={sweep} />;
+  } else if (page === "intermediate") {
+    withSidebar = true;
+    content = (
+      <IntermediatePage
+        config={config}
+        estimate={estimate}
+        sweep={sweep}
+        curve={curve}
+        flags={flags}
+        P={P}
+        bits={bits}
+        bwGbs={bwGbs}
+        onSelect={selectDesign}
+      />
+    );
+  } else if (page === "advanced") {
+    content = <AdvancedPage />;
+  } else if (page === "code") {
+    withSidebar = true;
+    content = <CodePage estimate={estimate} request={{ ...buildSettings(bwGbs, advanced), P: P, bits: bits }} />;
+  } else {
+    content = <HomePage sweep={sweep} config={config} />;
+  }
+
+  let body;
+  if (withSidebar) {
+    body = (
+      <div className="layout">
+        {sidebar}
+        <main className="main">
+          {offlineMessage}
+          {errorMessage}
+          {content}
+        </main>
       </div>
     );
-    kpis = <KpiCards estimate={estimate} sweep={sweep} />;
-    lamps = <BottleneckLamps estimate={estimate} />;
-    if (sweep) {
-      charts = (
-        <>
-          <TradeoffChart sweep={sweep} P={P} bits={bits} onSelect={selectDesign} />
-          <PhaseBreakdown sweep={sweep} estimate={estimate} P={P} bits={bits} onSelect={selectDesign} />
-          <BandwidthChart
-            curve={curve && curve.P === P ? curve : null}
-            estimate={estimate}
-            P={P}
-            bits={bits}
-            bwGbs={bwGbs}
-          />
-          <ResourcesCard estimate={estimate} sweep={sweep} limits={config.chip_limits} />
-        </>
-      );
-    }
-  }
-  if (devOpen) {
-    devView = (
-      <DevView
-        estimate={estimate}
-        request={{ ...buildSettings(bwGbs, advanced), P: P, bits: bits }}
-        onClose={() => setDevOpen(false)}
-      />
+  } else {
+    body = (
+      <main className="main page-wide">
+        {offlineMessage}
+        {content}
+      </main>
     );
   }
 
   return (
     <div className="app">
-      <StatusBar
-        config={config}
-        flags={flags}
-        online={online}
-        design={design}
-        P={P}
-        bits={bits}
-        devOpen={devOpen}
-        onToggleDev={() => setDevOpen(!devOpen)}
-      />
-
-      <div className="layout">
-        {sidebar}
-
-        <main className="main">
-          {offlineMessage}
-          {errorMessage}
-          {header}
-          {kpis}
-
-          {devView}
-
-          <div className="card-grid">
-            {charts}
-            {lamps}
-            <PlaceholderCard
-              title="Accuracy vs bits"
-              text="Answer quality at 16, 8 and 4 bits (waiting on eryc_model/accuracy.json)."
-            />
-            <AskPanel estimate={estimate} flags={flags} />
-            <FiguresCard figures={config ? config.figures : null} />
-          </div>
-        </main>
-      </div>
+      <StatusBar config={config} flags={flags} online={online} page={page} />
+      {body}
     </div>
   );
 }

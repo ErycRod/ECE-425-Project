@@ -191,14 +191,14 @@ export default function TradeoffChart(props) {
           {grid}
           <line x1={M.left} x2={plotRight} y1={plotBottom} y2={plotBottom} className="axis-line" />
           <text x={(M.left + plotRight) / 2} y={HEIGHT - 6} className="axis-title" textAnchor="middle">
-            Time to first token (s, log) — left is better
+            First word (s, log scale) — left is sooner
           </text>
           <text
             transform={"translate(14," + (M.top + plotBottom) / 2 + ") rotate(-90)"}
             className="axis-title"
             textAnchor="middle"
           >
-            Decode tok/s (log) — up is better
+            Words/s (log)
           </text>
           {points}
           {currentPoint}

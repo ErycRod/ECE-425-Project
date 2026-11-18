@@ -295,9 +295,11 @@ export default function DevView(props) {
         <h2 className="card-title card-title-icon">
           <Icon name="code" size={15} /> Developer view
         </h2>
-        <button className="chip-button" type="button" onClick={props.onClose}>
-          Close
-        </button>
+        {props.onClose ? (
+          <button className="chip-button" type="button" onClick={props.onClose}>
+            Close
+          </button>
+        ) : null}
       </div>
       <div className="tabs tabs-main">{tabButtons}</div>
       {content}
