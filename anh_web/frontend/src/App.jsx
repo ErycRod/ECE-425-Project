@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getConfig, getEstimate, getSweep } from "./api.js";
+import { getConfig, getEstimate, getSweep, getBandwidthCurve } from "./api.js";
 import { designLabel } from "./format.js";
 import StatusBar from "./components/StatusBar.jsx";
 import OperatorPanel from "./components/OperatorPanel.jsx";
@@ -7,6 +7,12 @@ import KpiCards from "./components/KpiCards.jsx";
 import BottleneckLamps from "./components/BottleneckLamps.jsx";
 import PlaceholderCard from "./components/PlaceholderCard.jsx";
 import AskPanel from "./components/AskPanel.jsx";
+import TradeoffChart from "./components/TradeoffChart.jsx";
+import BandwidthChart from "./components/BandwidthChart.jsx";
+import PhaseBreakdown from "./components/PhaseBreakdown.jsx";
+import ResourcesCard from "./components/ResourcesCard.jsx";
+import FiguresCard from "./components/FiguresCard.jsx";
+import DevView from "./components/DevView.jsx";
 
 const DEBOUNCE_MS = 100;
 const RETRY_MS = 3000;
@@ -56,6 +62,10 @@ export default function App() {
   const [estimate, setEstimate] = useState(null);
   const [sweep, setSweep] = useState(null);
   const [inputError, setInputError] = useState(null);
+  const [curve, setCurve] = useState(null);
+
+  // developer view (code, math and raw JSON) open or closed
+  const [devOpen, setDevOpen] = useState(false);
 
   // so an old, slow reply can't overwrite a newer one
   const requestNumber = useRef(0);
@@ -130,6 +140,33 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [config, P, bits, bwGbs, advanced, retryTick]);
 
+  // bandwidth curve for the current array size (changes with P and the advanced settings)
+  useEffect(() => {
+    if (config === null) {
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const settings = buildSettings(bwGbs, advanced);
+      delete settings.bw_gbs; // the curve covers every bandwidth
+      const reply = await getBandwidthCurve({ ...settings, P: P, points: 76 });
+      if (!cancelled && reply.ok) {
+        setCurve(reply.data);
+      }
+    }, DEBOUNCE_MS);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // bwGbs is left out on purpose: the curve doesn't depend on it
+  }, [config, P, advanced, retryTick]);
+
+  // clicking a design in a chart selects it in the sidebar
+  function selectDesign(newP, newBits) {
+    setP(newP);
+    setBits(newBits);
+  }
+
   function handleAdvancedChange(name, value) {
     const newAdvanced = { ...advanced };
     newAdvanced[name] = value;
@@ -164,6 +201,7 @@ export default function App() {
         bwGbs={bwGbs}
         advanced={advanced}
         estimate={estimate}
+        sweep={sweep}
         onPChange={setP}
         onBitsChange={setBits}
         onBwChange={setBwGbs}
@@ -203,6 +241,8 @@ export default function App() {
   // header line + KPI cards + lamps once numbers have arrived
   let header = null;
   let kpis = null;
+  let charts = null;
+  let devView = null;
   let lamps = <PlaceholderCard title="Bottleneck status" text="Waiting for the backend." />;
   if (estimate) {
     header = (
@@ -221,11 +261,45 @@ export default function App() {
     );
     kpis = <KpiCards estimate={estimate} sweep={sweep} />;
     lamps = <BottleneckLamps estimate={estimate} />;
+    if (sweep) {
+      charts = (
+        <>
+          <TradeoffChart sweep={sweep} P={P} bits={bits} onSelect={selectDesign} />
+          <PhaseBreakdown sweep={sweep} estimate={estimate} P={P} bits={bits} onSelect={selectDesign} />
+          <BandwidthChart
+            curve={curve && curve.P === P ? curve : null}
+            estimate={estimate}
+            P={P}
+            bits={bits}
+            bwGbs={bwGbs}
+          />
+          <ResourcesCard estimate={estimate} sweep={sweep} limits={config.chip_limits} />
+        </>
+      );
+    }
+  }
+  if (devOpen) {
+    devView = (
+      <DevView
+        estimate={estimate}
+        request={{ ...buildSettings(bwGbs, advanced), P: P, bits: bits }}
+        onClose={() => setDevOpen(false)}
+      />
+    );
   }
 
   return (
     <div className="app">
-      <StatusBar config={config} flags={flags} online={online} design={design} P={P} bits={bits} />
+      <StatusBar
+        config={config}
+        flags={flags}
+        online={online}
+        design={design}
+        P={P}
+        bits={bits}
+        devOpen={devOpen}
+        onToggleDev={() => setDevOpen(!devOpen)}
+      />
 
       <div className="layout">
         {sidebar}
@@ -236,34 +310,17 @@ export default function App() {
           {header}
           {kpis}
 
+          {devView}
+
           <div className="card-grid">
-            <PlaceholderCard
-              title="Tradeoff: TTFT vs tokens/s"
-              text="All 9 designs, with the current one highlighted."
-            />
-            <PlaceholderCard
-              title="Bandwidth curve"
-              text="Tokens/s vs memory bandwidth for each bit width."
-            />
-            <PlaceholderCard
-              title="Phase breakdown"
-              text="Time for vision, prefill and decode, and what limits each one."
-            />
-            <PlaceholderCard
-              title="FPGA resources"
-              text="LUT, DSP, FF and BRAM use vs the Zynq-7020 limits (waiting on the Vivado sweep)."
-            />
+            {charts}
             {lamps}
             <PlaceholderCard
               title="Accuracy vs bits"
-              text="Answer quality at 16, 8 and 4 bits (waiting on the model team)."
+              text="Answer quality at 16, 8 and 4 bits (waiting on eryc_model/accuracy.json)."
             />
             <AskPanel estimate={estimate} flags={flags} />
-            <PlaceholderCard
-              title="From the hardware team"
-              text="The tradeoff and dataflow figures from docs/."
-              wide={true}
-            />
+            <FiguresCard figures={config ? config.figures : null} />
           </div>
         </main>
       </div>

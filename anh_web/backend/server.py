@@ -51,6 +51,21 @@ HW_TEAM_NOTES = [
 FIGURES = {
     "tradeoff": "tradeoff.png",
     "dataflow": "dataflow.png",
+    "architecture": "architecture.png",
+}
+
+# source files the developer view can show (read-only, fixed list, repo-relative)
+SOURCES = {
+    "mac_pe.v": {"path": "hw/rtl/mac_pe.v", "language": "verilog",
+                 "about": "One processing element: multiply, accumulate, pass operands on."},
+    "systolic_array.v": {"path": "hw/rtl/systolic_array.v", "language": "verilog",
+                         "about": "The P x P grid of PEs with input skew."},
+    "tb_systolic_array.v": {"path": "hw/tb/tb_systolic_array.v", "language": "verilog",
+                            "about": "Self-checking testbench: random matrices, compares every output."},
+    "perf_model.py": {"path": "perf/perf_model.py", "language": "python",
+                      "about": "Roofline performance model behind every number on the page."},
+    "systolic_model.py": {"path": "hw/model/systolic_model.py", "language": "python",
+                          "about": "Cycle-by-cycle Python copy of the hardware."},
 }
 
 app = FastAPI(title="EdgeVLM Lab backend")
@@ -233,6 +248,12 @@ def run_one_design(P, bits, bw_gbs, f_mhz_override, util, out_tokens):
     result["out_tokens"] = out_tokens
     result["energy_note"] = energy_note
     result["phases"] = get_phases(profile, P, bits, f_mhz, bw_gbs, util)
+    result["workload"] = {
+        "vision_macs": profile["vision"]["macs"],
+        "vision_params": profile["vision"]["params"],
+        "lm_params": profile["lm"]["params"],
+        "prefill_tokens": profile["prefill_tokens"],
+    }
     result["resources"] = resources
     result["hw_team_note"] = get_hw_team_note(P, bits)
     return result
@@ -311,6 +332,7 @@ def config():
         "designs": designs,
         "hw_team_notes": HW_TEAM_NOTES,
         "figures": list(FIGURES.keys()),
+        "sources": list(SOURCES.keys()),
         "flags": flags(),
     }
 
@@ -416,3 +438,22 @@ def figure(name: str):
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="figure file not found in docs/")
     return FileResponse(path, media_type="image/png")
+
+
+# developer view: the real source files, so the page shows the code that made the numbers.
+# Only names in SOURCES are allowed, so no other file on the PC can be read.
+@app.get("/api/source/{name}")
+def source(name: str):
+    if name not in SOURCES:
+        raise HTTPException(status_code=404, detail="unknown source file")
+
+    info = SOURCES[name]
+    path = os.path.join(data.REPO_ROOT, info["path"])
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="file not found: " + info["path"])
+
+    file = open(path, "r", encoding="utf-8")
+    text = file.read()
+    file.close()
+    return {"name": name, "path": info["path"], "language": info["language"],
+            "about": info["about"], "text": text}

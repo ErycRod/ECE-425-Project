@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { designLabel } from "../format.js";
+import Icon from "./Icon.jsx";
 
 // "Zynq-7020 (xc7z020clg484-1)" -> "xc7z020clg484-1"
 function partNumber(chipText) {
@@ -72,14 +73,16 @@ function ChipInfo(props) {
 
   return (
     <span className="chip-info" ref={boxRef}>
-      <span className="status-muted">Target chip: Zynq-7020 FPGA</span>
+      <span className="status-muted chip-label">
+        <Icon name="cpu" size={14} /> Target chip: Zynq-7020 FPGA
+      </span>
       <button
         className={buttonClass}
         onClick={() => setOpen(!open)}
         aria-label="What is the Zynq-7020?"
         aria-expanded={open}
       >
-        i
+        <Icon name="info" size={13} />
       </button>
       {panel}
     </span>
@@ -139,6 +142,15 @@ export default function StatusBar(props) {
       <div className="status-center mono">{designText}</div>
 
       <div className="status-right">
+        <button
+          className={props.devOpen ? "dev-toggle dev-toggle-on" : "dev-toggle"}
+          type="button"
+          onClick={props.onToggleDev}
+          aria-pressed={props.devOpen === true}
+          title="Show the Verilog, the roofline math and the raw API data behind the numbers"
+        >
+          <Icon name="code" size={14} /> Developer view
+        </button>
         <span className="status-item">
           <span className={lampClass}></span>
           {lampText}

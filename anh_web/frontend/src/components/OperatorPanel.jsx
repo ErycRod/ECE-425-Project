@@ -1,4 +1,7 @@
 import { useState } from "react";
+import Icon from "./Icon.jsx";
+import InfoTip from "./InfoTip.jsx";
+import { findDesign, formatSeconds } from "../format.js";
 
 // Sidebar with the hardware controls: array size P, bits, memory bandwidth,
 // and the advanced settings (clock, utilization, output tokens).
@@ -114,18 +117,36 @@ export default function OperatorPanel(props) {
   return (
     <aside className="operator-panel">
       <div className="panel-section">
-        <h2 className="card-title">Array size (P×P)</h2>
+        <h2 className="card-title card-title-icon">
+          <Icon name="grid" size={14} /> Array size (P×P)
+          <InfoTip label="About array size">
+            P×P multiply-add units working in parallel. More units finish the big matrix multiplies
+            (vision, prefill) sooner.
+          </InfoTip>
+        </h2>
         <div className="pill-group">{pButtons}</div>
       </div>
 
       <div className="panel-section">
-        <h2 className="card-title">Bits per weight</h2>
+        <h2 className="card-title card-title-icon">
+          <Icon name="binary" size={14} /> Bits per weight
+          <InfoTip label="About bits per weight">
+            How many bits store each model weight. Fewer bits = fewer bytes to read per word, but on
+            this FPGA 8- and 4-bit multipliers are built from LUTs and clock lower.
+          </InfoTip>
+        </h2>
         <div className="pill-group">{bitsButtons}</div>
       </div>
 
       <div className="panel-section">
         <div className="slider-header">
-          <h2 className="card-title">Memory bandwidth</h2>
+          <h2 className="card-title card-title-icon">
+            <Icon name="memory" size={14} /> Bandwidth
+            <InfoTip label="About memory bandwidth">
+              How fast weights move from DRAM into the FPGA. Decode re-reads every weight for each
+              word, so this sets the decode speed until the array becomes the limit.
+            </InfoTip>
+          </h2>
           <span className="slider-value mono">{props.bwGbs.toFixed(2)} GB/s</span>
         </div>
         <input
@@ -151,18 +172,44 @@ export default function OperatorPanel(props) {
         {advancedSection}
       </div>
 
-      <div className="lesson">
-        <h2 className="card-title">The main lesson</h2>
-        <p>
-          A bigger array makes the first word come sooner (prefill is compute-bound), but it
-          doesn't make the model talk faster. Fewer bits do (decode is memory-bound).
-        </p>
-        <p>
-          One twist: 16-bit multipliers use the chip's DSP blocks and run near 296 MHz, but
-          8-bit and 4-bit ones are built from LUTs and only reach 130–162 MHz. So fewer bits
-          can make the first word slower (4×4: 28.3 s at 16-bit, 63.8 s at 8-bit).
-        </p>
-      </div>
+      <Lesson sweep={props.sweep} />
     </aside>
+  );
+}
+
+// "The main lesson" box. The example numbers come from the live sweep, so they
+// always match the charts (no numbers typed in by hand).
+function Lesson(props) {
+  let twist = null;
+  const d16 = findDesign(props.sweep, 4, 16);
+  const d8 = findDesign(props.sweep, 4, 8);
+  if (d16 && d8) {
+    twist = (
+      <p className="lesson-twist">
+        <Icon name="sparkle" size={13} /> Twist: 16-bit multipliers use DSP blocks ({Math.round(d16.f_mhz)} MHz);
+        8-bit ones are LUTs ({Math.round(d8.f_mhz)} MHz). At 4×4 the first word takes{" "}
+        <span className="mono">{formatSeconds(d16.ttft_s)} s</span> at 16-bit but{" "}
+        <span className="mono">{formatSeconds(d8.ttft_s)} s</span> at 8-bit.
+      </p>
+    );
+  }
+
+  return (
+    <div className="lesson">
+      <h2 className="card-title card-title-icon">
+        <Icon name="book" size={14} /> The main lesson
+      </h2>
+      <ul className="lesson-list">
+        <li>
+          <Icon name="grid" size={14} /> <strong>Bigger array</strong> → first word sooner
+          <span className="lesson-why"> (prefill is compute-bound)</span>
+        </li>
+        <li>
+          <Icon name="binary" size={14} /> <strong>Fewer bits</strong> → talks faster
+          <span className="lesson-why"> (decode is memory-bound)</span>
+        </li>
+      </ul>
+      {twist}
+    </div>
   );
 }

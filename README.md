@@ -21,7 +21,7 @@ talk faster. Fewer bits do.
 | `hw/` | Lucius Casertano | Verilog matrix-multiply engine, testbench, Python model of it, Vivado scripts | Working: all 9 designs pass simulation (including worst-case overflow test); Vivado sweep → `results.json` |
 | `perf/` | Lucius Casertano | Performance model (TTFT, tokens/s, energy), tradeoff chart, latency + report-table scripts | Working; uses each design's real Fmax and power from `results.json`; workload numbers are a placeholder until Eryc's profile lands |
 | `eryc_model/` | Eryc Rodriguez | Running and profiling SmolVLM, 8/4-bit accuracy | Not started, see `eryc_model/README.md` |
-| `anh_web/` | Anh Tran | The interactive website (FastAPI backend + React frontend) | Controls, KPI cards and bottleneck lamps working; charts next. See [Website](#website-anh_web) |
+| `anh_web/` | Anh Tran (Lucius: charts, icons, developer view) | The interactive website (FastAPI backend + React frontend) | Controls, KPI cards, 4 charts, resources, bottleneck lamps, developer view and Ask panel working. See [Website](#website-anh_web) |
 | `docs/` | Everyone | Figures, architecture diagram, report sections, video slides | `architecture.png`, `dataflow.png`, `tradeoff.png`, `report/`, `video/` |
 
 **Real vs. placeholder right now:** hardware numbers (simulation, synthesis) are real, the workload
@@ -114,10 +114,16 @@ modelled FPGA estimates from `perf/perf_model.py`, not measured times.
 | Hardware controls (P, bits, bandwidth, advanced settings) | Working |
 | KPI cards (TTFT, tokens/s, answer time, energy) | Working (clock, power and energy use real Vivado data from `results.json`) |
 | Bottleneck lamps, target chip info | Working |
-| Tradeoff chart, bandwidth curve, phase breakdown | Next |
-| FPGA resources (LUT / DSP / FF / BRAM) | Data ready in `results.json` (sent by `/api/estimate`); card next |
+| Tradeoff chart (all 9 designs, TTFT vs tokens/s; click a point to select it) | Working |
+| Decode speed vs bandwidth (roofline knee: faded = compute-bound) | Working (`/api/bandwidth_curve`) |
+| Where the answer time goes (vision / prefill / decode, all 9 designs) | Working |
+| FPGA resources (LUT / DSP / FF / BRAM meters vs chip limits, Fmax, power) | Working |
+| Every chart: hover tooltips, info tip, one-line takeaway, **Table** button with the same numbers | Working |
+| Icons + short labels with (i) tooltips instead of long paragraphs | Working (inline SVG in `components/Icon.jsx`, no extra npm package) |
+| **Developer view** (top-right toggle): roofline math with live numbers checked against the API, Verilog and Python source, raw API JSON + curl | Working (`/api/source/<name>`, fixed list of files) |
+| How it works: architecture + dataflow figures from `docs/` | Working |
 | Accuracy at 16 / 8 / 4 bits | Waiting on `eryc_model/accuracy.json` |
-| Ask the model (image + question) | Waiting on the model code in `eryc_model/` |
+| Ask the model (image + question) | Working (`eryc_model/vlm.py`) |
 
 **Needs:** Python 3.9+, Node.js 18+ (with npm). Commands are for Windows PowerShell.
 
@@ -145,12 +151,12 @@ page shows the command to start it.
 
 **Tests:**
 ```powershell
-# backend (pytest, 20 tests): every number is checked against perf_model.py
+# backend (pytest, 30 tests): every number is checked against perf_model.py
 cd anh_web
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .\.venv\Scripts\python -m pytest tests -v
 
-# frontend (Vitest, 11 tests): number formatting, "n/a" for missing values, comparison with 4×4 baselines
+# frontend (Vitest, 20 tests): number formatting, "n/a" for missing values, 4×4 baselines, chart scales/ticks
 cd frontend
 npm test -- --run
 ```
@@ -181,6 +187,8 @@ over by itself (no restart) when `eryc_model/profile_summary.json` or `eryc_mode
 ```
 anh_web/backend/     server.py (FastAPI app, calls perf_model.py), data.py (loads the data files)
 anh_web/frontend/    React + Vite app: src/App.jsx, src/api.js, src/format.js, src/components/
+                     src/charts/ (scales, tooltip, width hook for the hand-drawn SVG charts)
+                     src/highlight.js (code colouring for the developer view)
 anh_web/tests/       backend tests (pytest)
 ```
 

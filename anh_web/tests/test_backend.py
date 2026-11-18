@@ -384,3 +384,41 @@ def test_figures(client):
 
     response = client.get("/api/figures/secret")
     assert response.status_code == 404
+
+
+# ---- developer view ----------------------------------------------------------
+def test_source_files_are_served(client):
+    config = client.get("/api/config").json()
+    assert "mac_pe.v" in config["sources"]
+    for name in config["sources"]:
+        response = client.get("/api/source/" + name)
+        assert response.status_code == 200, name
+        body = response.json()
+        assert body["name"] == name
+        assert len(body["text"]) > 0
+        # the text is the real file from the repo
+        path = os.path.join(data.REPO_ROOT, body["path"])
+        file = open(path, "r", encoding="utf-8")
+        assert body["text"] == file.read()
+        file.close()
+
+
+def test_source_rejects_other_files(client):
+    for name in ["server.py", "..%2Fserver.py", "results.json", "secret.txt"]:
+        response = client.get("/api/source/" + name)
+        assert response.status_code == 404
+
+
+def test_estimate_includes_workload(client):
+    profile = lucius_profile()
+    result = ask_estimate(client, {"P": 8, "bits": 8, "bw_gbs": 1.0})
+    assert result["workload"]["vision_macs"] == profile["vision"]["macs"]
+    assert result["workload"]["vision_params"] == profile["vision"]["params"]
+    assert result["workload"]["lm_params"] == profile["lm"]["params"]
+    assert result["workload"]["prefill_tokens"] == profile["prefill_tokens"]
+
+
+def test_architecture_figure(client):
+    response = client.get("/api/figures/architecture")
+    assert response.status_code == 200
+    assert response.headers["content-type"] == "image/png"
