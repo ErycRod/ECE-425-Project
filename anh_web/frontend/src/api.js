@@ -60,3 +60,13 @@ export function askModel(imageFile, question) {
   form.append("question", question);
   return request("POST", "/api/ask", form);
 }
+
+// tokens/s vs bandwidth for one array size (all three bit widths)
+export function getBandwidthCurve(settings) {
+  return request("POST", "/api/bandwidth_curve", settings);
+}
+
+// one source file for the developer view (only names the backend allows)
+export function getSource(name) {
+  return request("GET", "/api/source/" + encodeURIComponent(name));
+}

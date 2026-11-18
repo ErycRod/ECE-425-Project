@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import Badge from "./Badge.jsx";
+import Icon from "./Icon.jsx";
+import InfoTip from "./InfoTip.jsx";
 import { isMissing, formatNumber, compareText, findDesign, shortDesignName } from "../format.js";
 
 const TWEEN_MS = 300;
@@ -77,8 +79,16 @@ function KpiCard(props) {
   return (
     <section className="card kpi-card">
       <div className="card-header">
-        <h2 className="card-title">{props.title}</h2>
-        <Badge show={props.placeholder} title="Workload numbers are a placeholder profile" />
+        <h2 className="card-title card-title-icon">
+          <Icon name={props.icon} size={15} />
+          {props.title}
+        </h2>
+        <div className="card-actions">
+          <Badge show={props.placeholder} title="Workload numbers are a placeholder profile" />
+          <InfoTip label={"About " + props.title} align={props.alignTip}>
+            {props.info}
+          </InfoTip>
+        </div>
       </div>
       <div className="kpi-value">
         <span className={numberClass}>{numberText}</span>
@@ -138,6 +148,8 @@ export default function KpiCards(props) {
     <div className="kpi-row">
       <KpiCard
         title="Time to first token"
+        icon="clock"
+        info="How long until the first word appears: vision encoder + LM prefill + one decode step. A bigger array shortens it."
         value={estimate.ttft_s}
         decimals={2}
         unit="s"
@@ -147,6 +159,8 @@ export default function KpiCards(props) {
       />
       <KpiCard
         title="Decode speed"
+        icon="gauge"
+        info="Words per second after the first one. Each word re-reads every weight from memory, so fewer bits or more bandwidth speed it up."
         value={estimate.tokens_per_s}
         decimals={1}
         unit="tok/s"
@@ -156,6 +170,9 @@ export default function KpiCards(props) {
       />
       <KpiCard
         title="Answer time"
+        icon="hourglass"
+        info="Time for the whole answer: time to first token plus one decode step for each remaining word."
+        alignTip="right"
         value={estimate.answer_s}
         decimals={2}
         unit="s"
@@ -165,6 +182,9 @@ export default function KpiCards(props) {
       />
       <KpiCard
         title="Energy per answer"
+        icon="zap"
+        info="Vivado's power estimate for this design × answer time. Joules for one full answer."
+        alignTip="right"
         value={energy}
         decimals={2}
         unit="J"
