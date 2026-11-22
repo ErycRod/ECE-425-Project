@@ -21,6 +21,9 @@ def test_matches():
     assert is_correct("2 dogs", "2")
     assert is_correct("The kitchen", "kitchen")
     assert is_correct("doesn't", "doesnt")
+    # a short sentence that contains the answer
+    assert is_correct("The object on the right is an umbrella.", "umbrella")
+    assert is_correct("There are 2 sinks.", "2")
 
 
 def test_mismatches():
@@ -28,6 +31,9 @@ def test_mismatches():
     assert not is_correct("20", "2")        # whole words only
     assert not is_correct("blue", "light blue")
     assert not is_correct("anything", "")
+    # yes/no must start the reply; long rambling replies don't count
+    assert not is_correct("Is it yes or no", "yes")
+    assert not is_correct("one two three four five six seven eight nine ten eleven twelve umbrella", "umbrella")
 
 
 def test_accuracy():

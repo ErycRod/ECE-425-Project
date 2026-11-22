@@ -27,8 +27,9 @@ Tip: PyTorch forward hooks on every `nn.Linear` layer give you in/out features a
 answers. Run from the repo folder:
 
 ```
-python eryc_model/eval_accuracy.py --n 20     # quick try (~5 min on a laptop CPU)
-python eryc_model/eval_accuracy.py            # 100 questions (~20-40 min)
+python eryc_model/eval_accuracy.py --n 20     # quick try (~12 min on a laptop CPU)
+python eryc_model/eval_accuracy.py            # 100 questions (about 1 hour)
+python eryc_model/eval_accuracy.py --rescore  # re-score the saved answers after a scoring change
 ```
 
 It writes `eryc_model/accuracy.json`; the website shows it on its own (Intermediate → Accuracy).
