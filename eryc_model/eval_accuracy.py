@@ -11,9 +11,11 @@ and scores the answers against VQAv2 (validation questions from merve/vqav2-smal
 so only the questions used are downloaded).
 
 Run from the repo folder (first run downloads the model and ~100 images):
-  python eryc_model/eval_accuracy.py               # 100 questions, ~20-40 min on a laptop CPU
-  python eryc_model/eval_accuracy.py --n 20        # quick try
-Writes eryc_model/accuracy.json, which the website picks up by itself.
+  python eryc_model/eval_accuracy.py               # 100 questions, about 1 hour on a laptop CPU
+  python eryc_model/eval_accuracy.py --n 20        # quick try (~12 min)
+  python eryc_model/eval_accuracy.py --rescore     # re-score saved answers (no model, seconds)
+Writes eryc_model/accuracy.json, which the website picks up by itself. Every answer is saved
+in it, so a change to the scoring in vqa_score.py only needs --rescore, not a new run.
 """
 import argparse
 import json
@@ -71,7 +73,13 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--n", type=int, default=100, help="number of questions (default 100)")
     parser.add_argument("--out", default=str(OUTPUT))
+    parser.add_argument("--rescore", action="store_true",
+                        help="recompute the scores from the answers saved in --out (no model needed)")
     args = parser.parse_args()
+
+    if args.rescore:
+        rescore(args.out)
+        return
 
     print("loading SmolVLM-256M ...", flush=True)
     from vlm import MODEL_ID, model, processor
@@ -105,36 +113,67 @@ def main():
         print("  ->  {:.1%}".format(score), flush=True)
     quantize_model(model, saved, None)  # put the original weights back
 
-    # a few questions where the answer changed with fewer bits (for the website)
-    examples = []
+    # every answer, so the scoring can be changed later without running the model again
+    replies = []
     for i, item in enumerate(items):
-        changed = len(set(answers[s["key"]][i].lower() for s in SETTINGS)) > 1
-        if changed and len(examples) < 8:
-            entry = {"question": item["question"], "answer": item["answer"]}
-            for s in SETTINGS:
-                entry[s["key"]] = answers[s["key"]][i]
-                entry[s["key"] + "_correct"] = is_correct(answers[s["key"]][i], item["answer"])
-            examples.append(entry)
+        entry = {"question": item["question"], "answer": item["answer"]}
+        for s in SETTINGS:
+            entry[s["key"]] = answers[s["key"]][i]
+        replies.append(entry)
 
     output = {
         **results,
         "order": [s["key"] for s in SETTINGS],
-        "metric": "exact match after VQA normalization (lowercase, no punctuation/articles, "
-                  "number words to digits); a reply also counts if it starts with the answer",
         "dataset": DATASET + " (VQAv2 validation), first " + str(len(items)) + " questions",
         "n": len(items),
         "model": MODEL_ID,
         "method": "fake quantization of every nn.Linear weight: symmetric round-to-nearest, "
                   "one scale per output channel (4g: per group of 128); activations stay in full precision",
-        "examples": examples,
+        "replies": replies,
         "total_seconds": round(time.time() - started, 1),
         "date": date.today().isoformat(),
     }
+    score_replies(output)
     with open(args.out, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2)
     print("wrote", args.out)
     for s in SETTINGS:
-        print("  {:<22} {:.1%}".format(s["label"], results[s["key"]]["score"]))
+        print("  {:<22} {:.1%}".format(s["label"], output[s["key"]]["score"]))
+
+
+def score_replies(output):
+    """Scores, plus a few questions where fewer bits changed the answer (for the website),
+    from the saved replies. Used after a run and by --rescore."""
+    replies = output["replies"]
+    keys = [s["key"] for s in SETTINGS if s["key"] in output]
+    for key in keys:
+        output[key]["score"] = round(accuracy([r[key] for r in replies], [r["answer"] for r in replies]), 4)
+    examples = []
+    for r in replies:
+        if len(set(r[key].lower() for key in keys)) > 1 and len(examples) < 8:
+            entry = {"question": r["question"], "answer": r["answer"]}
+            for key in keys:
+                entry[key] = r[key]
+                entry[key + "_correct"] = is_correct(r[key], r["answer"])
+            examples.append(entry)
+    output["examples"] = examples
+    output["metric"] = ("VQA-normalized match (lowercase, no punctuation/articles, number words to digits): "
+                        "the reply equals or starts with the answer, or is a short sentence (up to 12 words) "
+                        "containing it; yes/no answers must start the reply")
+
+
+def rescore(path):
+    with open(path, encoding="utf-8") as f:
+        output = json.load(f)
+    if "replies" not in output:
+        sys.exit(path + " has no saved replies (made by an older version): run the evaluation again")
+    score_replies(output)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(output, f, indent=2)
+    print("re-scored", path)
+    for s in SETTINGS:
+        if s["key"] in output:
+            print("  {:<22} {:.1%}".format(s["label"], output[s["key"]]["score"]))
 
 
 if __name__ == "__main__":

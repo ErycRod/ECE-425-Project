@@ -1,0 +1,1077 @@
+{
+  "full": {
+    "score": 0.5,
+    "label": "Full precision",
+    "bits": null,
+    "group_size": null,
+    "layers_rounded": 0,
+    "weights_rounded": 0,
+    "seconds": 777.6
+  },
+  "16": {
+    "score": 0.5,
+    "label": "16-bit",
+    "bits": 16,
+    "group_size": null,
+    "layers_rounded": 284,
+    "weights_rounded": 226566144,
+    "seconds": 773.3
+  },
+  "8": {
+    "score": 0.5,
+    "label": "8-bit",
+    "bits": 8,
+    "group_size": null,
+    "layers_rounded": 284,
+    "weights_rounded": 226566144,
+    "seconds": 773.0
+  },
+  "4": {
+    "score": 0.2,
+    "label": "4-bit",
+    "bits": 4,
+    "group_size": null,
+    "layers_rounded": 284,
+    "weights_rounded": 226566144,
+    "seconds": 776.1
+  },
+  "4g": {
+    "score": 0.43,
+    "label": "4-bit, groups of 128",
+    "bits": 4,
+    "group_size": 128,
+    "layers_rounded": 284,
+    "weights_rounded": 226566144,
+    "seconds": 774.7
+  },
+  "order": [
+    "full",
+    "16",
+    "8",
+    "4",
+    "4g"
+  ],
+  "dataset": "merve/vqav2-small (VQAv2 validation), first 100 questions",
+  "n": 100,
+  "model": "HuggingFaceTB/SmolVLM-256M-Instruct",
+  "method": "fake quantization of every nn.Linear weight: symmetric round-to-nearest, one scale per output channel (4g: per group of 128); activations stay in full precision",
+  "replies": [
+    {
+      "question": "Where are the kids riding?",
+      "answer": "carnival ride",
+      "full": "Parking lot.",
+      "16": "Parking lot.",
+      "8": "Parking lot.",
+      "4": "A:",
+      "4g": "Trashman."
+    },
+    {
+      "question": "Is this boy a good pitcher?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A short answer with a short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What is the person wearing?",
+      "answer": "wetsuit",
+      "full": "Wetsuit.",
+      "16": "Wetsuit.",
+      "8": "Wetsuit.",
+      "4": "A.",
+      "4g": "Surfboard."
+    },
+    {
+      "question": "How many sinks are in this bathroom?",
+      "answer": "4",
+      "full": "Two.",
+      "16": "Two.",
+      "8": "Two.",
+      "4": "2.",
+      "4g": "2."
+    },
+    {
+      "question": "What sport are the girls playing?",
+      "answer": "soccer",
+      "full": "Soccer.",
+      "16": "Soccer.",
+      "8": "Soccer.",
+      "4": "1. answering.",
+      "4g": "Soccer."
+    },
+    {
+      "question": "What is the object on the right?",
+      "answer": "umbrella",
+      "full": "Umbrella.",
+      "16": "Umbrella.",
+      "8": "Umbrella.",
+      "4": "NATURA.",
+      "4g": "The object on the right is an umbrella."
+    },
+    {
+      "question": "Is there an MP3 player on the table?",
+      "answer": "no",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Was this picture taken from inside the room?",
+      "answer": "no",
+      "full": "Inside.",
+      "16": "Inside.",
+      "8": "Inside.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What color is the curb?",
+      "answer": "gray",
+      "full": "Yellow.",
+      "16": "Yellow.",
+      "8": "Yellow.",
+      "4": "White.",
+      "4g": "Yellow."
+    },
+    {
+      "question": "How many sheep are there?",
+      "answer": "1",
+      "full": "1.",
+      "16": "1.",
+      "8": "1.",
+      "4": "1.",
+      "4g": "2."
+    },
+    {
+      "question": "Where was this photo taken?",
+      "answer": "la brea ave",
+      "full": "New York.",
+      "16": "New York.",
+      "8": "New York.",
+      "4": "The answer is \"SAMSUNG\".",
+      "4g": "San Francisco."
+    },
+    {
+      "question": "What material is the building made out of?",
+      "answer": "brick",
+      "full": "Brick.",
+      "16": "Brick.",
+      "8": "Brick.",
+      "4": "Brick.",
+      "4g": "Stone."
+    },
+    {
+      "question": "Is it daytime?",
+      "answer": "no",
+      "full": "Day.",
+      "16": "Day.",
+      "8": "Day.",
+      "4": "DAY.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is this an orchard?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is the camera on?",
+      "answer": "no",
+      "full": "Cellphone.",
+      "16": "Cellphone.",
+      "8": "Cellphone.",
+      "4": "answering.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Are the blinds closed?",
+      "answer": "no",
+      "full": "Closed.",
+      "16": "Closed.",
+      "8": "Closed.",
+      "4": "answering.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Are they on a ski slope?",
+      "answer": "yes",
+      "full": "Ski.",
+      "16": "Ski.",
+      "8": "Ski.",
+      "4": "A short phrase.",
+      "4g": "A."
+    },
+    {
+      "question": "Is the man in the air?",
+      "answer": "no",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "is.",
+      "4g": "No."
+    },
+    {
+      "question": "Have the candles been burned?",
+      "answer": "no",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "Birthday.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is the water calm?",
+      "answer": "no",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "A short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Who is holding the baby?",
+      "answer": "man",
+      "full": "Man.",
+      "16": "Man.",
+      "8": "Man.",
+      "4": "Child.",
+      "4g": "Baby."
+    },
+    {
+      "question": "Where is the elephant in the photo?",
+      "answer": "watering hole",
+      "full": "Water.",
+      "16": "Water.",
+      "8": "Water.",
+      "4": "Aquatic.",
+      "4g": "Here."
+    },
+    {
+      "question": "What print is on the blanket?",
+      "answer": "plaid",
+      "full": "Plaid.",
+      "16": "Plaid.",
+      "8": "Plaid.",
+      "4": "Plaid.",
+      "4g": "Plaid."
+    },
+    {
+      "question": "What is the source of the red lines in the picture?",
+      "answer": "tail lights",
+      "full": "Street light.",
+      "16": "Street light.",
+      "8": "Street light.",
+      "4": "The answer is \"presents and traffic lights\".",
+      "4g": "The source of the red lines in the picture is"
+    },
+    {
+      "question": "Are any cars at the stoplight?",
+      "answer": "no",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "No.",
+      "4g": "No."
+    },
+    {
+      "question": "What color is the sky?",
+      "answer": "blue",
+      "full": "Blue.",
+      "16": "Blue.",
+      "8": "Blue.",
+      "4": "Blue.",
+      "4g": "Yes, the sky is blue."
+    },
+    {
+      "question": "How many people can sit on this motorcycle?",
+      "answer": "2",
+      "full": "1.",
+      "16": "1.",
+      "8": "1.",
+      "4": "People.",
+      "4g": "One."
+    },
+    {
+      "question": "How old is the white horse?",
+      "answer": "old",
+      "full": "Old.",
+      "16": "Old.",
+      "8": "Old.",
+      "4": "A short answer with a single word or a short",
+      "4g": "1."
+    },
+    {
+      "question": "Is anyone sitting on this bike?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What color is the plate?",
+      "answer": "white",
+      "full": "White.",
+      "16": "White.",
+      "8": "White.",
+      "4": "Red.",
+      "4g": "The plate is white."
+    },
+    {
+      "question": "What color is the woman's outfit?",
+      "answer": "pink",
+      "full": "Pink.",
+      "16": "Pink.",
+      "8": "Pink.",
+      "4": "1.",
+      "4g": "Pink."
+    },
+    {
+      "question": "How many people are visible in this image?",
+      "answer": "6",
+      "full": "5.",
+      "16": "5.",
+      "8": "5.",
+      "4": "answering.",
+      "4g": "There are 5 people in this image."
+    },
+    {
+      "question": "What color are the wheels on the skateboard?",
+      "answer": "white",
+      "full": "White.",
+      "16": "White.",
+      "8": "Black.",
+      "4": "Black.",
+      "4g": "Black."
+    },
+    {
+      "question": "Are the kids having fun?",
+      "answer": "yes",
+      "full": "Fun.",
+      "16": "Fun.",
+      "8": "Fun.",
+      "4": "The answer is \"sad\".",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is the girl older than the boy?",
+      "answer": "yes",
+      "full": "No.",
+      "16": "Yes.",
+      "8": "No.",
+      "4": "A short answer.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Do the bears on the left look like they are playing?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "Ahead",
+      "4g": "Yes."
+    },
+    {
+      "question": "Do both clocks show exactly the same time?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "No.",
+      "8": "Yes.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is he happy or sad?",
+      "answer": "happy",
+      "full": "Happy.",
+      "16": "Happy.",
+      "8": "Happy.",
+      "4": "Happy.",
+      "4g": "Happy."
+    },
+    {
+      "question": "What is on top of the zebra's head and down the back of his neck?",
+      "answer": "mane",
+      "full": "Hair.",
+      "16": "Hair.",
+      "8": "Hair.",
+      "4": "The zebra's head and tail.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What kind of food is on the plate?",
+      "answer": "pizza",
+      "full": "Pizza.",
+      "16": "Pizza.",
+      "8": "Pizza.",
+      "4": "Appluse.",
+      "4g": "Pizza."
+    },
+    {
+      "question": "Is there anyone on the water?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A.",
+      "4g": "Yes."
+    },
+    {
+      "question": "How many types of animals are in the photo?",
+      "answer": "2",
+      "full": "2.",
+      "16": "2.",
+      "8": "2.",
+      "4": "2.",
+      "4g": "2."
+    },
+    {
+      "question": "Is the child dressed up?",
+      "answer": "yes",
+      "full": "Up.",
+      "16": "Up.",
+      "8": "Up.",
+      "4": "A short answer to the question.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is this a deep dish?",
+      "answer": "no",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "Answer:",
+      "4g": "Yes."
+    },
+    {
+      "question": "What time is shown on the clock?",
+      "answer": "12:50",
+      "full": "1:05.",
+      "16": "1:55.",
+      "8": "1:00.",
+      "4": "morning.",
+      "4g": "1:0."
+    },
+    {
+      "question": "What shape pan is this appetizer in?",
+      "answer": "square",
+      "full": "Tray.",
+      "16": "Tray.",
+      "8": "Oven.",
+      "4": "A utensil.",
+      "4g": "Square."
+    },
+    {
+      "question": "What does this sign indicate?",
+      "answer": "thru traffic merge left",
+      "full": "Traffic.",
+      "16": "Traffic.",
+      "8": "Traffic.",
+      "4": "answering.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Have other people skied here?",
+      "answer": "yes",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "answering",
+      "4g": "Yes."
+    },
+    {
+      "question": "Are the scissors open or closed?",
+      "answer": "closed",
+      "full": "Closed.",
+      "16": "Closed.",
+      "8": "Closed.",
+      "4": "A short phrase.",
+      "4g": "Open."
+    },
+    {
+      "question": "Is there any traffic?",
+      "answer": "yes",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "No.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is the cat's reflection visible in the mirror?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Should the car go or stop?",
+      "answer": "stop",
+      "full": "Stop.",
+      "16": "Stop.",
+      "8": "Stop.",
+      "4": "A short answer with a short phrase.",
+      "4g": "Stop."
+    },
+    {
+      "question": "Does she look up to him?",
+      "answer": "no",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What chocolates can be seen in the picture?",
+      "answer": "truffles",
+      "full": "Picnic.",
+      "16": "Picnic.",
+      "8": "Caramel.",
+      "4": "The answer is \"presents\".",
+      "4g": "The text \"teddy bears picnic\""
+    },
+    {
+      "question": "What color is the house in the middle?",
+      "answer": "blue",
+      "full": "Blue.",
+      "16": "Blue.",
+      "8": "Blue.",
+      "4": "Green, blue, and white.",
+      "4g": "A."
+    },
+    {
+      "question": "Is the skateboarder wearing any safety equipment?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A short answer to a question.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What is on the person's ears?",
+      "answer": "headphones",
+      "full": "Headphones.",
+      "16": "Headphones.",
+      "8": "Headphones.",
+      "4": "Bird.",
+      "4g": "A word."
+    },
+    {
+      "question": "What kind of laptops are these?",
+      "answer": "apple",
+      "full": "Computer.",
+      "16": "Computer.",
+      "8": "Computer.",
+      "4": "Smartphones.",
+      "4g": "laptops."
+    },
+    {
+      "question": "How many elephants?",
+      "answer": "2",
+      "full": "2.",
+      "16": "2.",
+      "8": "2.",
+      "4": "2.",
+      "4g": "2."
+    },
+    {
+      "question": "Is the lady going for a walk in the rain?",
+      "answer": "no",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "Yes.",
+      "4g": "No."
+    },
+    {
+      "question": "What game is he playing?",
+      "answer": "wii",
+      "full": "Wii.",
+      "16": "Wii.",
+      "8": "Wii.",
+      "4": "The answer is \"HEAVN\"",
+      "4g": "Wii."
+    },
+    {
+      "question": "Where are the wings?",
+      "answer": "back",
+      "full": "Bird.",
+      "16": "Bird.",
+      "8": "Bird.",
+      "4": "Trees.",
+      "4g": "On the right."
+    },
+    {
+      "question": "Is this singles tennis?",
+      "answer": "no",
+      "full": "Singles.",
+      "16": "Singles.",
+      "8": "Singles.",
+      "4": "A short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What color is the building in the distance?",
+      "answer": "white",
+      "full": "White.",
+      "16": "White.",
+      "8": "White.",
+      "4": "White building.",
+      "4g": "White."
+    },
+    {
+      "question": "What is the function of the item on the left?",
+      "answer": "fire hydrant",
+      "full": "Hydrant.",
+      "16": "Hydrant.",
+      "8": "Hydrant.",
+      "4": "A statue.",
+      "4g": "The function of the item on the left is to"
+    },
+    {
+      "question": "Where do the footprints lead?",
+      "answer": "to person",
+      "full": "Beach.",
+      "16": "Beach.",
+      "8": "Beach.",
+      "4": "Answer:",
+      "4g": "Across."
+    },
+    {
+      "question": "Are these professional cooks?",
+      "answer": "yes",
+      "full": "Professional.",
+      "16": "Professional.",
+      "8": "Professional.",
+      "4": "professional.",
+      "4g": "Answer: uniforms."
+    },
+    {
+      "question": "What is the topic of their training?",
+      "answer": "stability",
+      "full": "Stability.",
+      "16": "Stability.",
+      "8": "Stability.",
+      "4": "A trainer.",
+      "4g": "The topic of their training is stability."
+    },
+    {
+      "question": "What does the yellow and blue sign say?",
+      "answer": "walk",
+      "full": "Parking.",
+      "16": "Parking.",
+      "8": "Parking meter.",
+      "4": "Answer: Answeruchringingwhileplaying\nThe",
+      "4g": "A."
+    },
+    {
+      "question": "Is the window big?",
+      "answer": "no",
+      "full": "Big.",
+      "16": "Big.",
+      "8": "Big.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is the person touching anything?",
+      "answer": "yes",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "A.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is the water cold?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What is in the mug?",
+      "answer": "butter",
+      "full": "Coffee.",
+      "16": "Coffee.",
+      "8": "Coffee.",
+      "4": "The answer is \"sewer\".",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is this a picture taken recently?",
+      "answer": "yes",
+      "full": "Recently.",
+      "16": "Recently.",
+      "8": "Recently.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is the soda cup laying down?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Where are the pizzas?",
+      "answer": "none",
+      "full": "On counter.",
+      "16": "On counter.",
+      "8": "On counter.",
+      "4": "The answer is \"pizza\".",
+      "4g": "In the background."
+    },
+    {
+      "question": "What is the girl holding?",
+      "answer": "scissors",
+      "full": "Scissors.",
+      "16": "Scissors.",
+      "8": "Scissors.",
+      "4": "answering answering answering answering answering answering answering answering answering answering",
+      "4g": "Yes."
+    },
+    {
+      "question": "Are there leaves on the tree?",
+      "answer": "no",
+      "full": "Leaves.",
+      "16": "Leaves.",
+      "8": "Leaves.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "How many trains are on the track?",
+      "answer": "1",
+      "full": "1.",
+      "16": "1.",
+      "8": "1.",
+      "4": "7007.",
+      "4g": "1."
+    },
+    {
+      "question": "What animal is depicted on his shoes?",
+      "answer": "bear",
+      "full": "Deer.",
+      "16": "Deer.",
+      "8": "Deer.",
+      "4": "A.",
+      "4g": "A."
+    },
+    {
+      "question": "Is it a cloudy day?",
+      "answer": "yes",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "What color is the horse?",
+      "answer": "black and white",
+      "full": "Black.",
+      "16": "Black.",
+      "8": "Black.",
+      "4": "Black, with a beautiful, spotted, long hair",
+      "4g": "Black and white."
+    },
+    {
+      "question": "How many wings does the airplane have?",
+      "answer": "2",
+      "full": "2.",
+      "16": "2.",
+      "8": "2.",
+      "4": "2.",
+      "4g": "1."
+    },
+    {
+      "question": "What kind of phone is this?",
+      "answer": "sony ericsson",
+      "full": "Sony Ericsson.",
+      "16": "Sony Ericsson.",
+      "8": "Sony Ericsson.",
+      "4": "SONY ERICO.",
+      "4g": "Sony."
+    },
+    {
+      "question": "What kind of buns are shown?",
+      "answer": "hot dog",
+      "full": "Sandwich.",
+      "16": "Sandwich.",
+      "8": "Sandwich.",
+      "4": "Birthday.",
+      "4g": "Bananas."
+    },
+    {
+      "question": "What color is the building with the clock on it?",
+      "answer": "red",
+      "full": "Red.",
+      "16": "Red.",
+      "8": "Red.",
+      "4": "Red.",
+      "4g": "The building is red and brown."
+    },
+    {
+      "question": "How many shirts are in this picture?",
+      "answer": "1",
+      "full": "2.",
+      "16": "2.",
+      "8": "2.",
+      "4": "1.",
+      "4g": "2."
+    },
+    {
+      "question": "Is there anyone wearing glasses?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "How many people are standing?",
+      "answer": "0",
+      "full": "1.",
+      "16": "1.",
+      "8": "1.",
+      "4": "3.",
+      "4g": "2."
+    },
+    {
+      "question": "What color is the carpet?",
+      "answer": "brown",
+      "full": "Carpet.",
+      "16": "Carpet.",
+      "8": "Brown.",
+      "4": "Gray.",
+      "4g": "Black."
+    },
+    {
+      "question": "What game is the little girl playing?",
+      "answer": "wii",
+      "full": "Wii.",
+      "16": "Wii.",
+      "8": "Wii.",
+      "4": "The little girl appears to be playing a video game",
+      "4g": "The game is not."
+    },
+    {
+      "question": "What color is the shoes?",
+      "answer": "white",
+      "full": "Green.",
+      "16": "Green.",
+      "8": "Green.",
+      "4": "Red.",
+      "4g": "Pink."
+    },
+    {
+      "question": "Are  the on the sand?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "A short phrase.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Is that bird within that woman's field of view?",
+      "answer": "yes",
+      "full": "No.",
+      "16": "No.",
+      "8": "No.",
+      "4": "Yes.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Are these boards upside down?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "Yes.",
+      "4g": "upside."
+    },
+    {
+      "question": "What time does it say on the clock?",
+      "answer": "10:35",
+      "full": "9:05.",
+      "16": "9:05.",
+      "8": "9:05.",
+      "4": "1:00.",
+      "4g": "Answer: 11."
+    },
+    {
+      "question": "How many of the people are using laptops?",
+      "answer": "0",
+      "full": "0.",
+      "16": "0.",
+      "8": "0.",
+      "4": "2.",
+      "4g": "1."
+    },
+    {
+      "question": "Is there someone on the driver seat?",
+      "answer": "yes",
+      "full": "Yes.",
+      "16": "Yes.",
+      "8": "Yes.",
+      "4": "Aid.",
+      "4g": "Yes."
+    },
+    {
+      "question": "Why is there more than one tab open on the computer?",
+      "answer": "working",
+      "full": "Multitasking.",
+      "16": "Multitasking.",
+      "8": "Work.",
+      "4": "A short phrase.",
+      "4g": "There is."
+    },
+    {
+      "question": "Is this person's skirt really short?",
+      "answer": "no",
+      "full": "Skirt.",
+      "16": "Skirt.",
+      "8": "Skirt.",
+      "4": "Short.",
+      "4g": "Short."
+    }
+  ],
+  "total_seconds": 3875.5,
+  "date": "2026-11-21",
+  "examples": [
+    {
+      "question": "Where are the kids riding?",
+      "answer": "carnival ride",
+      "full": "Parking lot.",
+      "full_correct": false,
+      "16": "Parking lot.",
+      "16_correct": false,
+      "8": "Parking lot.",
+      "8_correct": false,
+      "4": "A:",
+      "4_correct": false,
+      "4g": "Trashman.",
+      "4g_correct": false
+    },
+    {
+      "question": "Is this boy a good pitcher?",
+      "answer": "yes",
+      "full": "Yes.",
+      "full_correct": true,
+      "16": "Yes.",
+      "16_correct": true,
+      "8": "Yes.",
+      "8_correct": true,
+      "4": "A short answer with a short phrase.",
+      "4_correct": false,
+      "4g": "Yes.",
+      "4g_correct": true
+    },
+    {
+      "question": "What is the person wearing?",
+      "answer": "wetsuit",
+      "full": "Wetsuit.",
+      "full_correct": true,
+      "16": "Wetsuit.",
+      "16_correct": true,
+      "8": "Wetsuit.",
+      "8_correct": true,
+      "4": "A.",
+      "4_correct": false,
+      "4g": "Surfboard.",
+      "4g_correct": false
+    },
+    {
+      "question": "How many sinks are in this bathroom?",
+      "answer": "4",
+      "full": "Two.",
+      "full_correct": false,
+      "16": "Two.",
+      "16_correct": false,
+      "8": "Two.",
+      "8_correct": false,
+      "4": "2.",
+      "4_correct": false,
+      "4g": "2.",
+      "4g_correct": false
+    },
+    {
+      "question": "What sport are the girls playing?",
+      "answer": "soccer",
+      "full": "Soccer.",
+      "full_correct": true,
+      "16": "Soccer.",
+      "16_correct": true,
+      "8": "Soccer.",
+      "8_correct": true,
+      "4": "1. answering.",
+      "4_correct": false,
+      "4g": "Soccer.",
+      "4g_correct": true
+    },
+    {
+      "question": "What is the object on the right?",
+      "answer": "umbrella",
+      "full": "Umbrella.",
+      "full_correct": true,
+      "16": "Umbrella.",
+      "16_correct": true,
+      "8": "Umbrella.",
+      "8_correct": true,
+      "4": "NATURA.",
+      "4_correct": false,
+      "4g": "The object on the right is an umbrella.",
+      "4g_correct": true
+    },
+    {
+      "question": "Was this picture taken from inside the room?",
+      "answer": "no",
+      "full": "Inside.",
+      "full_correct": false,
+      "16": "Inside.",
+      "16_correct": false,
+      "8": "Inside.",
+      "8_correct": false,
+      "4": "Yes.",
+      "4_correct": false,
+      "4g": "Yes.",
+      "4g_correct": false
+    },
+    {
+      "question": "What color is the curb?",
+      "answer": "gray",
+      "full": "Yellow.",
+      "full_correct": false,
+      "16": "Yellow.",
+      "16_correct": false,
+      "8": "Yellow.",
+      "8_correct": false,
+      "4": "White.",
+      "4_correct": false,
+      "4g": "Yellow.",
+      "4g_correct": false
+    }
+  ],
+  "metric": "VQA-normalized match (lowercase, no punctuation/articles, number words to digits): the reply equals or starts with the answer, or is a short sentence (up to 12 words) containing it; yes/no answers must start the reply"
+}
