@@ -105,6 +105,13 @@ export default function TradeoffChart(props) {
     });
   }
 
+  // when the user's design sits on top of the selected synthesized point (same design, same
+  // clock), one label "You (8×8)" replaces the two overlapping ones
+  function starCovers(px, py) {
+    return extra !== null && Math.abs(x(extra.ttft_s) - px) < 20 && Math.abs(y(extra.tokens_per_s) - py) < 20;
+  }
+  let starOnPoint = false;
+
   // points: the current design last so it draws on top
   let points = [];
   let currentPoint = null;
@@ -151,13 +158,16 @@ export default function TradeoffChart(props) {
       >
         {isCurrent ? <circle cx={px} cy={py} r={13} className="current-ring" /> : null}
         <BitMarker bits={d.bits} x={px} y={py} r={isCurrent ? 7 : 5.5} />
-        <text x={px} y={labelY} className={labelClass} textAnchor="middle">
-          {d.P}×{d.P}
-        </text>
+        {isCurrent && starCovers(px, py) ? null : (
+          <text x={px} y={labelY} className={labelClass} textAnchor="middle">
+            {d.P}×{d.P}
+          </text>
+        )}
         <circle cx={px} cy={py} r={16} className="hit-area" />
       </g>
     );
     if (isCurrent) {
+      starOnPoint = starCovers(px, py);
       currentPoint = point;
     } else {
       points.push(point);
@@ -172,6 +182,7 @@ export default function TradeoffChart(props) {
       <ExtraStar
         x={ex}
         y={ey}
+        label={starOnPoint ? "You (" + props.P + "×" + props.P + ")" : "You"}
         onHover={(on) => {
           if (on) {
             setTip({
@@ -268,7 +279,7 @@ function ExtraStar(props) {
     >
       <polygon points={points.join(" ")} />
       <text x={props.x} y={props.y - 16} textAnchor="middle" className="point-label point-label-current">
-        You
+        {props.label}
       </text>
       <circle cx={props.x} cy={props.y} r={16} className="hit-area" />
     </g>

@@ -607,6 +607,28 @@ def test_custom_design_mentions_accuracy(real_client, fake_files):
     assert lines[0]["kind"] == "info" and "69%" in lines[0]["text"]
 
 
+def test_custom_design_accuracy_tile(real_client, fake_files):
+    # the verdict's Accuracy tile: nothing until accuracy.json exists
+    body = real_client.post("/api/custom_design", json={"P": 32, "bits": 4}).json()
+    assert body["accuracy"] is None
+    accuracy = {"full": {"score": 0.50}, "16": {"score": 0.50}, "8": {"score": 0.50},
+                "4": {"score": 0.20}, "n": 100, "metric": "test", "dataset": "test"}
+    write_json(fake_files / "accuracy.json", accuracy)
+    tile = real_client.post("/api/custom_design", json={"P": 32, "bits": 4}).json()["accuracy"]
+    assert tile["pct"] == 20.0 and tile["full_pct"] == 50.0 and tile["n"] == 100
+    assert tile["drop_points"] == 30.0 and tile["warning"] is True
+    tile = real_client.post("/api/custom_design", json={"P": 4, "bits": 8}).json()["accuracy"]
+    assert tile["pct"] == 50.0 and tile["warning"] is False
+
+
+def test_accuracy_summary_without_full_precision():
+    # without a full-precision score, compare with the best measured bit width
+    tile = custom_design.accuracy_summary(4, {"16": {"score": 0.6}, "8": {"score": 0.58}, "4": {"score": 0.57}})
+    assert tile["full_pct"] is None and tile["reference_pct"] == 60.0 and tile["warning"] is False
+    assert custom_design.accuracy_summary(4, None) is None
+    assert custom_design.accuracy_summary(4, {"16": {"score": 0.6}}) is None
+
+
 def test_check_estimate_compare():
     # hw/scripts/check_estimate.py: estimate (from the 9 designs) next to Vivado's numbers
     sys.path.insert(0, os.path.join(data.REPO_ROOT, "hw", "scripts"))

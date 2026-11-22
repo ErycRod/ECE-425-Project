@@ -172,12 +172,12 @@ page shows the command to start it.
 
 **Tests:**
 ```powershell
-# backend (pytest, 45 tests): every number is checked against perf_model.py
+# backend (pytest, 47 tests): every number is checked against perf_model.py
 cd anh_web
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .\.venv\Scripts\python -m pytest tests -v
 
-# frontend (Vitest, 33 tests): number formatting, "n/a" for missing values, 4×4 baselines, plain-language durations, chart scales/ticks, animation vs hardware-model frames, Advanced challenges, accuracy task
+# frontend (Vitest, 36 tests): number formatting, "n/a" for missing values, 4×4 baselines, plain-language durations, chart scales/ticks, animation vs hardware-model frames, Advanced challenges, accuracy task, verdict ranks and accuracy tile, same-answer counts
 cd frontend
 npm test -- --run
 

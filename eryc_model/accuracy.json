@@ -961,6 +961,34 @@
   "date": "2026-11-21",
   "examples": [
     {
+      "question": "What color are the wheels on the skateboard?",
+      "answer": "white",
+      "full": "White.",
+      "full_correct": true,
+      "16": "White.",
+      "16_correct": true,
+      "8": "Black.",
+      "8_correct": false,
+      "4": "Black.",
+      "4_correct": false,
+      "4g": "Black.",
+      "4g_correct": false
+    },
+    {
+      "question": "Is the girl older than the boy?",
+      "answer": "yes",
+      "full": "No.",
+      "full_correct": false,
+      "16": "Yes.",
+      "16_correct": true,
+      "8": "No.",
+      "8_correct": false,
+      "4": "A short answer.",
+      "4_correct": false,
+      "4g": "Yes.",
+      "4g_correct": true
+    },
+    {
       "question": "Where are the kids riding?",
       "answer": "carnival ride",
       "full": "Parking lot.",
@@ -1043,35 +1071,29 @@
       "4_correct": false,
       "4g": "The object on the right is an umbrella.",
       "4g_correct": true
-    },
-    {
-      "question": "Was this picture taken from inside the room?",
-      "answer": "no",
-      "full": "Inside.",
-      "full_correct": false,
-      "16": "Inside.",
-      "16_correct": false,
-      "8": "Inside.",
-      "8_correct": false,
-      "4": "Yes.",
-      "4_correct": false,
-      "4g": "Yes.",
-      "4g_correct": false
-    },
-    {
-      "question": "What color is the curb?",
-      "answer": "gray",
-      "full": "Yellow.",
-      "full_correct": false,
-      "16": "Yellow.",
-      "16_correct": false,
-      "8": "Yellow.",
-      "8_correct": false,
-      "4": "White.",
-      "4_correct": false,
-      "4g": "Yellow.",
-      "4g_correct": false
     }
   ],
-  "metric": "VQA-normalized match (lowercase, no punctuation/articles, number words to digits): the reply equals or starts with the answer, or is a short sentence (up to 12 words) containing it; yes/no answers must start the reply"
+  "metric": "VQA-normalized match (lowercase, no punctuation/articles, number words to digits): the reply equals or starts with the answer, or is a short sentence (up to 12 words) containing it; yes/no answers must start the reply",
+  "agreement": {
+    "16": {
+      "same": 97,
+      "lost": 1,
+      "gained": 1
+    },
+    "8": {
+      "same": 93,
+      "lost": 1,
+      "gained": 1
+    },
+    "4": {
+      "same": 19,
+      "lost": 34,
+      "gained": 4
+    },
+    "4g": {
+      "same": 31,
+      "lost": 18,
+      "gained": 11
+    }
+  }
 }

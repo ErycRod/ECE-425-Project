@@ -2892,9 +2892,15 @@ pre.code-block:not(.json-response):not(.wrap) {
 }
 
 /* verdict */
+.rank-note {
+  margin: 0 0 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
 .rank-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -2923,6 +2929,19 @@ pre.code-block:not(.json-response):not(.wrap) {
 
 .rank-best .rank-value {
   color: var(--ok);
+}
+
+.rank-warn {
+  border-color: var(--warn);
+}
+
+.rank-warn .rank-value {
+  color: var(--warn);
+}
+
+.rank-detail {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .reason-list {
@@ -3002,7 +3021,7 @@ pre.code-block:not(.json-response):not(.wrap) {
     white-space: normal;
   }
   .rank-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -3050,6 +3069,33 @@ pre.code-block:not(.json-response):not(.wrap) {
 .acc-row-current .acc-value {
   color: var(--text);
   font-weight: 600;
+}
+
+/* the mono font's dotted zero reads like an 8 in bold, so the selected row's percent uses the UI font */
+.acc-row-current .acc-value {
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+
+.acc-agree {
+  margin: 4px 0 14px;
+  font-size: 12.5px;
+}
+
+.acc-agree-counts {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.acc-agree-item {
+  white-space: nowrap;
+}
+
+.acc-agree-note {
+  margin: 6px 0 0;
+  color: var(--muted);
 }
 
 .acc-label {

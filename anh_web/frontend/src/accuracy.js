@@ -15,3 +15,28 @@ export function bestBitsWithinFivePoints(accuracy) {
   }
   return null;
 }
+
+// "Same answer as full precision" counts from accuracy.json's "agreement" (eval_accuracy.py):
+// one entry per precision, plus the precisions whose score didn't move because as many answers
+// turned right as turned wrong. Null for older files without "agreement".
+export function agreementSummary(accuracy) {
+  if (!accuracy || !accuracy.agreement) {
+    return null;
+  }
+  const order = accuracy.order || ["full", "16", "8", "4", "4g"];
+  let parts = [];
+  let balanced = [];
+  for (let i = 0; i < order.length; i++) {
+    const key = order[i];
+    const a = accuracy.agreement[key];
+    if (!a || !accuracy[key]) {
+      continue;
+    }
+    const label = accuracy[key].label || key;
+    parts.push({ key: key, label: label, same: a.same });
+    if (a.same < accuracy.n && a.lost === a.gained) {
+      balanced.push(label);
+    }
+  }
+  return { parts: parts, balanced: balanced, n: accuracy.n };
+}
