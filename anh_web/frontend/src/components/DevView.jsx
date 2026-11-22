@@ -13,7 +13,7 @@ const TABS = [
 
 const FILES = {
   verilog: ["systolic_array.v", "mac_pe.v", "tb_systolic_array.v"],
-  python: ["perf_model.py", "systolic_model.py"],
+  python: ["perf_model.py", "systolic_model.py", "export_frames.py"],
 };
 
 // 1395646267392 -> 1.396 × 10^12 (as JSX)

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { getConfig, getEstimate, getSweep, getBandwidthCurve } from "./api.js";
+import { getConfig, getEstimate, getSweep, getBandwidthCurve, getAccuracy } from "./api.js";
 import { usePage } from "./levels.js";
 import StatusBar from "./components/StatusBar.jsx";
 import OperatorPanel from "./components/OperatorPanel.jsx";
@@ -58,6 +58,9 @@ export default function App() {
   const [sweep, setSweep] = useState(null);
   const [inputError, setInputError] = useState(null);
   const [curve, setCurve] = useState(null);
+
+  // accuracy at 16 / 8 / 4 bits, once eryc_model/accuracy.json exists
+  const [accuracy, setAccuracy] = useState(null);
 
   // which page is showing (Home, Beginner, Intermediate, Advanced, Code)
   const [page] = usePage();
@@ -156,6 +159,31 @@ export default function App() {
     // bwGbs is left out on purpose: the curve doesn't depend on it
   }, [config, P, advanced, retryTick]);
 
+  // fetch the accuracy results when the backend reports the file (and again if it changes)
+  let accuracyReady = false;
+  let accuracySource = null;
+  if (estimate && estimate.flags) {
+    accuracyReady = estimate.flags.accuracy_pending === false;
+    accuracySource = estimate.flags.accuracy_source;
+  }
+  useEffect(() => {
+    if (!accuracyReady) {
+      setAccuracy(null);
+      return;
+    }
+    let cancelled = false;
+    async function load() {
+      const reply = await getAccuracy();
+      if (!cancelled && reply.ok && !reply.data.pending) {
+        setAccuracy(reply.data.data);
+      }
+    }
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [accuracyReady, accuracySource, retryTick]);
+
   // clicking a design in a chart selects it in the sidebar
   function selectDesign(newP, newBits) {
     setP(newP);
@@ -242,6 +270,7 @@ export default function App() {
         sweep={sweep}
         curve={curve}
         flags={flags}
+        accuracy={accuracy}
         P={P}
         bits={bits}
         bwGbs={bwGbs}
@@ -249,7 +278,7 @@ export default function App() {
       />
     );
   } else if (page === "advanced") {
-    content = <AdvancedPage />;
+    content = <AdvancedPage config={config} accuracy={accuracy} />;
   } else if (page === "code") {
     withSidebar = true;
     content = <CodePage estimate={estimate} request={{ ...buildSettings(bwGbs, advanced), P: P, bits: bits }} />;

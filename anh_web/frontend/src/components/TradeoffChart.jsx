@@ -51,8 +51,16 @@ export default function TradeoffChart(props) {
   const [tip, setTip] = useState(null);
   const designs = props.sweep.designs;
 
-  const ttftRange = extent(designs.map((d) => d.ttft_s));
-  const rateRange = extent(designs.map((d) => d.tokens_per_s));
+  // the user's own design (Advanced level), drawn as a star and kept inside the axes
+  const extra = props.extra || null;
+  let ttftValues = designs.map((d) => d.ttft_s);
+  let rateValues = designs.map((d) => d.tokens_per_s);
+  if (extra) {
+    ttftValues = ttftValues.concat([extra.ttft_s]);
+    rateValues = rateValues.concat([extra.tokens_per_s]);
+  }
+  const ttftRange = extent(ttftValues);
+  const rateRange = extent(rateValues);
   const xDomain = padLogDomain(ttftRange[0], ttftRange[1], 1.3);
   const yDomain = padLogDomain(rateRange[0], rateRange[1], 1.45);
 
@@ -156,6 +164,33 @@ export default function TradeoffChart(props) {
     }
   }
 
+  let extraStar = null;
+  if (extra) {
+    const ex = x(extra.ttft_s);
+    const ey = y(extra.tokens_per_s);
+    extraStar = (
+      <ExtraStar
+        x={ex}
+        y={ey}
+        onHover={(on) => {
+          if (on) {
+            setTip({
+              x: ex,
+              y: ey,
+              title: extra.label,
+              rows: [
+                { label: "time to first token", value: formatSeconds(extra.ttft_s) + " s" },
+                { label: "decode speed", value: formatRate(extra.tokens_per_s) + " tok/s" },
+              ],
+            });
+          } else {
+            setTip(null);
+          }
+        }}
+      />
+    );
+  }
+
   // table view (same numbers)
   let rows = [];
   for (let i = 0; i < designs.length; i++) {
@@ -202,9 +237,40 @@ export default function TradeoffChart(props) {
           </text>
           {points}
           {currentPoint}
+          {extraStar}
         </svg>
         <Tooltip tip={tip} width={width} />
       </div>
     </ChartCard>
+  );
+}
+
+// five-point star for the user's own design (Advanced level)
+function ExtraStar(props) {
+  let points = [];
+  for (let i = 0; i < 10; i++) {
+    let r = 4.6;
+    if (i % 2 === 0) {
+      r = 11;
+    }
+    const angle = -Math.PI / 2 + (i * Math.PI) / 5;
+    points.push((props.x + r * Math.cos(angle)).toFixed(1) + "," + (props.y + r * Math.sin(angle)).toFixed(1));
+  }
+  return (
+    <g
+      className="extra-star"
+      tabIndex={0}
+      aria-label="Your design"
+      onMouseEnter={() => props.onHover(true)}
+      onMouseLeave={() => props.onHover(false)}
+      onFocus={() => props.onHover(true)}
+      onBlur={() => props.onHover(false)}
+    >
+      <polygon points={points.join(" ")} />
+      <text x={props.x} y={props.y - 16} textAnchor="middle" className="point-label point-label-current">
+        You
+      </text>
+      <circle cx={props.x} cy={props.y} r={16} className="hit-area" />
+    </g>
   );
 }

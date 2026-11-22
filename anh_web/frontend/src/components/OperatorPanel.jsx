@@ -151,6 +151,7 @@ export default function OperatorPanel(props) {
         <input
           className="slider"
           type="range"
+          aria-label="Memory bandwidth"
           min={bw.min}
           max={bw.max}
           step={bw.step}

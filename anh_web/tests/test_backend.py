@@ -4,6 +4,7 @@ The main thing we check: every number the website shows is exactly what
 Lucius's perf_model.py gives back. The backend must not change his numbers.
 """
 import os
+import sys
 
 import pytest
 
@@ -422,3 +423,213 @@ def test_architecture_figure(client):
     response = client.get("/api/figures/architecture")
     assert response.status_code == 200
     assert response.headers["content-type"] == "image/png"
+
+
+# ---- Beginner animation -------------------------------------------------------
+def test_systolic_frames(client):
+    response = client.get("/api/systolic_frames")
+    assert response.status_code == 200
+    rec = response.json()
+    P = rec["P"]
+    K = rec["K"]
+    # one frame per clock edge plus the cleared start, and the K + 2P - 2 latency rule
+    assert rec["cycles"] == K + 2 * P - 2
+    assert len(rec["frames"]) == rec["cycles"] + 1
+    # the last frame's accumulators are A x B
+    for i in range(P):
+        for j in range(P):
+            expected = 0
+            for k in range(K):
+                expected = expected + rec["A"][i][k] * rec["B"][k][j]
+            assert rec["frames"][-1]["acc"][i][j] == expected
+            assert rec["C"][i][j] == expected
+            # every PE did exactly K multiply-adds
+            assert len(rec["frames"][-1]["terms"][i][j]) == K
+
+
+def test_systolic_frames_missing(client, monkeypatch, tmp_path):
+    monkeypatch.setattr(data, "SYSTOLIC_FRAMES_PATH", str(tmp_path / "nope.json"))
+    response = client.get("/api/systolic_frames")
+    assert response.status_code == 404
+    assert "export_frames.py" in response.json()["detail"]
+
+
+# ---- Advanced level: custom designs --------------------------------------------------------
+import json  # noqa: E402
+
+import custom_design  # noqa: E402
+import verilog_gen  # noqa: E402
+
+LIMITS = {"luts": 53200, "dsps": 220, "ffs": 106400, "bram": 140}
+
+
+@pytest.fixture
+def real_client(client, monkeypatch):
+    """Test client that reads the real results.json and Eryc's measured workload profile,
+    so these tests check the numbers the Advanced page really shows."""
+    real_profile = os.path.join(data.REPO_ROOT, "eryc_model", "profile_summary.json")
+    if not os.path.exists(DEFAULT_RESULTS) or not os.path.exists(real_profile):
+        pytest.skip("needs results.json and eryc_model/profile_summary.json")
+    monkeypatch.setattr(data, "RESULTS_PATH", DEFAULT_RESULTS)
+    monkeypatch.setattr(data, "ERYC_PROFILE_PATH", real_profile)
+    data.clear_cache()
+    return client
+
+
+def real_rows():
+    if not os.path.exists(DEFAULT_RESULTS):
+        pytest.skip("no results.json yet")
+    file = open(DEFAULT_RESULTS, "r")
+    rows = json.load(file)
+    file.close()
+    return rows
+
+
+def test_fit_line_is_exact_on_a_line():
+    a, b = custom_design.fit_line([1, 2, 3], [5, 7, 9])
+    assert abs(a - 3) < 1e-9 and abs(b - 2) < 1e-9
+
+
+def test_synthesized_designs_use_real_vivado_numbers():
+    rows = real_rows()
+    for row in rows:
+        hw = custom_design.estimate_hardware(row["P"], row["bits"], rows, LIMITS)
+        assert hw["estimated"] is False
+        assert hw["luts"] == row["luts"] and hw["fmax_mhz"] == row["fmax_mhz"]
+
+
+def test_leave_one_out_error_is_small():
+    # fit on two designs, predict the third: LUTs, FFs and power all within 10%
+    check = custom_design.leave_one_out(real_rows())
+    assert len(check["checks"]) == 6
+    assert check["worst_error_pct"] < 10
+
+
+def test_estimates_follow_the_hardware_rules():
+    rows = real_rows()
+    # 8-bit: no DSPs, LUTs grow with P, clock stays at the 8-bit Fmax
+    small = custom_design.estimate_hardware(6, 8, rows, LIMITS)
+    big = custom_design.estimate_hardware(12, 8, rows, LIMITS)
+    assert small["estimated"] and small["dsps"] == 0 and big["luts"] > small["luts"]
+    assert small["fmax_mhz"] == big["fmax_mhz"]
+    # 16-bit: one DSP per PE while they last, then LUT spill and a slower clock
+    in_dsps = custom_design.estimate_hardware(14, 16, rows, LIMITS)
+    spilled = custom_design.estimate_hardware(20, 16, rows, LIMITS)
+    assert in_dsps["dsps"] == 196 and in_dsps["fmax_mhz"] > 250
+    assert spilled["dsps"] == 220 and spilled["fmax_mhz"] < 100
+    # 8-bit stops fitting between 24x24 and 25x25
+    assert custom_design.estimate_hardware(24, 8, rows, LIMITS)["fits_zynq7020"] is True
+    assert custom_design.estimate_hardware(25, 8, rows, LIMITS)["fits_zynq7020"] is False
+
+
+def test_custom_design_endpoint(real_client):
+    response = real_client.post("/api/custom_design", json={"P": 12, "bits": 8, "bw_gbs": 1.0})
+    assert response.status_code == 200
+    body = response.json()
+    design = body["design"]
+    # same shape as /api/estimate, so the page can reuse its cards
+    for key in ["ttft_s", "tokens_per_s", "answer_s", "energy_J", "phases", "resources", "f_mhz"]:
+        assert key in design
+    assert design["P"] == 12 and design["custom"] is True and design["resources"]["estimated"] is True
+    # the perf model numbers agree with perf_model.estimate at the estimated clock and power
+    profile = lucius_profile()
+    expected = estimate(profile, 12, 8, design["f_mhz"], 1.0, 0.8, 32, design["resources"]["power_w"])
+    assert abs(design["ttft_s"] - expected["ttft_s"]) < 1e-9
+    assert len(body["designs"]) == 9
+    assert body["ranking"]["ranks"]["ttft_s"]["of"] == 10
+    assert len(body["explanations"]) >= 4
+    assert "module edgevlm_top_p12_b8" in body["verilog"]["text"]
+    assert body["commands"]["simulate_iverilog"].endswith("--sizes 12 --bits 8")
+
+
+def test_custom_design_ranking_finds_dominating_design(real_client):
+    # 12x12/8-bit is beaten on every metric by 16x16/8-bit (design 6)
+    body = real_client.post("/api/custom_design", json={"P": 12, "bits": 8}).json()
+    assert body["ranking"]["pareto"] is False
+    assert 6 in [d["design"] for d in body["ranking"]["dominated_by"]]
+    # and every design listed really is at least as good on all three metrics
+    mine = body["design"]
+    for d in body["ranking"]["dominated_by"]:
+        assert d["ttft_s"] <= mine["ttft_s"] and d["tokens_per_s"] >= mine["tokens_per_s"]
+        assert d["energy_J"] <= mine["energy_J"]
+    # 14x14/16-bit (196 DSPs, full clock) has the fastest first word of all
+    body = real_client.post("/api/custom_design", json={"P": 14, "bits": 16}).json()
+    assert body["ranking"]["ranks"]["ttft_s"]["rank"] == 1
+    assert body["ranking"]["pareto"] is True
+
+
+def test_custom_design_bad_inputs(real_client):
+    assert real_client.post("/api/custom_design", json={"P": 1, "bits": 8}).status_code == 422
+    assert real_client.post("/api/custom_design", json={"P": 33, "bits": 8}).status_code == 422
+    assert real_client.post("/api/custom_design", json={"P": 8, "bits": 12}).status_code == 422
+
+
+def test_custom_design_needs_results(client):
+    # without the Vivado sweep there is nothing to estimate from
+    assert client.post("/api/custom_design", json={"P": 12, "bits": 8}).status_code == 409
+
+
+def test_custom_design_validation_endpoint(real_client):
+    body = real_client.get("/api/custom_design/validation").json()
+    assert body["worst_error_pct"] < 10
+
+
+def test_generated_verilog():
+    text = verilog_gen.make_top(12, 8, ["test line"])
+    assert "module edgevlm_top_p12_b8" in text
+    assert "parameter P   = 12" in text and "parameter B   = 8" in text
+    assert "systolic_array #(" in text and ".ACC(ACC)" in text
+    assert text.count("module ") == 1 and text.count("endmodule") == 1
+    assert text.count("(") == text.count(")")
+    assert "// test line" in text
+    assert verilog_gen.acc_bits(8) == 28
+    # every port of systolic_array is connected
+    file = open(os.path.join(data.REPO_ROOT, "hw", "rtl", "systolic_array.v"), "r")
+    rtl = file.read()
+    file.close()
+    for port in ["clk", "rst", "clear", "in_valid", "a_col", "b_row", "c_flat", "busy"]:
+        assert port in rtl and "." + port + "(" + port + ")" in text
+
+
+def test_custom_design_mentions_accuracy(real_client, fake_files):
+    # no accuracy.json yet: no accuracy line
+    body = real_client.post("/api/custom_design", json={"P": 12, "bits": 4}).json()
+    assert not any("test questions" in r["text"] for r in body["explanations"])
+    # with accuracy.json: a line for this bit width, a warning when it drops a lot
+    accuracy = {"full": {"score": 0.70}, "16": {"score": 0.70}, "8": {"score": 0.69},
+                "4": {"score": 0.40}, "n": 100, "metric": "test", "dataset": "test"}
+    write_json(fake_files / "accuracy.json", accuracy)
+    body = real_client.post("/api/custom_design", json={"P": 12, "bits": 4}).json()
+    lines = [r for r in body["explanations"] if "test questions" in r["text"]]
+    assert len(lines) == 1 and "40%" in lines[0]["text"] and lines[0]["kind"] == "warning"
+    body = real_client.post("/api/custom_design", json={"P": 12, "bits": 8}).json()
+    lines = [r for r in body["explanations"] if "test questions" in r["text"]]
+    assert lines[0]["kind"] == "info" and "69%" in lines[0]["text"]
+
+
+def test_check_estimate_compare():
+    # hw/scripts/check_estimate.py: estimate (from the 9 designs) next to Vivado's numbers
+    sys.path.insert(0, os.path.join(data.REPO_ROOT, "hw", "scripts"))
+    import check_estimate
+
+    rows = real_rows()
+    estimate = custom_design.estimate_hardware(12, 8, rows, LIMITS)
+    vivado = {"luts": estimate["luts"] * 1.10, "ffs": estimate["ffs"], "dsps": 0,
+              "fmax_mhz": 125.0, "power_w": estimate["power_w"]}
+    entry = check_estimate.compare(12, 8, vivado, rows)
+    assert entry["estimate"]["luts"] == estimate["luts"]
+    assert entry["error_pct"]["luts"] == round((1 / 1.10 - 1) * 100, 1)
+    assert entry["error_pct"]["ffs"] == 0.0
+    assert entry["error_pct"]["dsps"] is None  # 0 DSPs: no percentage
+
+
+def test_validation_includes_new_size_checks(real_client, monkeypatch, tmp_path):
+    body = real_client.get("/api/custom_design/validation").json()
+    monkeypatch.setattr(data, "ESTIMATE_CHECKS_PATH", str(tmp_path / "none.json"))
+    body = real_client.get("/api/custom_design/validation").json()
+    assert body["new_size_checks"] == []
+    checks = [{"P": 12, "bits": 8, "estimate": {}, "vivado": {}, "error_pct": {"luts": 3.0}}]
+    write_json(tmp_path / "checks.json", checks)
+    monkeypatch.setattr(data, "ESTIMATE_CHECKS_PATH", str(tmp_path / "checks.json"))
+    body = real_client.get("/api/custom_design/validation").json()
+    assert body["new_size_checks"][0]["P"] == 12

@@ -20,13 +20,14 @@ talk faster. Fewer bits do.
 | --- | --- | --- | --- |
 | `hw/` | Lucius Casertano | Verilog matrix-multiply engine, testbench, Python model of it, Vivado scripts | Working: all 9 designs pass simulation (including worst-case overflow test); Vivado sweep → `results.json` |
 | `perf/` | Lucius Casertano | Performance model (TTFT, tokens/s, energy), tradeoff chart, latency + report-table scripts | Working; uses each design's real Fmax and power from `results.json`; workload numbers are a placeholder until Eryc's profile lands |
-| `eryc_model/` | Eryc Rodriguez | Running and profiling SmolVLM, 8/4-bit accuracy | Not started, see `eryc_model/README.md` |
+| `eryc_model/` | Eryc Rodriguez (Lucius: accuracy evaluation) | Running and profiling SmolVLM, accuracy at 16/8/4 bits | Profiling done (`profile_summary.json`); accuracy: `eval_accuracy.py` → `accuracy.json`, see `eryc_model/README.md` |
 | `anh_web/` | Anh Tran (Lucius: charts, icons, developer view) | The interactive website (FastAPI backend + React frontend) | Controls, KPI cards, 4 charts, resources, bottleneck lamps, developer view and Ask panel working. See [Website](#website-anh_web) |
-| `docs/` | Everyone | Figures, architecture diagram, report sections, video slides | `architecture.png`, `dataflow.png`, `tradeoff.png`, `report/`, `video/` |
+| `docs/` | Everyone | Figures, architecture diagram, report sections, video slides, user study | `architecture.png`, `dataflow.png`, `tradeoff.png`, `report/`, `video/`, `evaluation/` |
 
 **Real vs. placeholder right now:** hardware numbers (simulation, synthesis) are real, the workload
 is measured from SmolVLM (`eryc_model/profile_summary.json`), and SmolVLM answers questions about an
-uploaded image on the page. Still to come: accuracy at 16 / 8 / 4 bits.
+uploaded image on the page. Accuracy at 16 / 8 / 4 bits appears on the page once
+`eryc_model/eval_accuracy.py` has been run (it writes `eryc_model/accuracy.json`).
 
 ## How the pieces connect
 
@@ -87,7 +88,20 @@ python perf/plot_perf.py              # -> docs/tradeoff.png
 python hw/model/plot_dataflow.py      # -> docs/dataflow.png
 python docs/make_architecture.py      # -> docs/architecture.png
 python perf/report_table.py           # -> docs/table_designs.tex (for the report)
+
+# Accuracy at 16 / 8 / 4 bits on VQAv2 questions -> eryc_model/accuracy.json (~20-40 min on a CPU)
+python eryc_model/eval_accuracy.py --n 20   # quick try first
+python eryc_model/eval_accuracy.py
+
+# Check the Advanced level's hardware estimates on sizes never synthesized (Vivado terminal)
+python hw/scripts/check_estimate.py         # 12x12 at 16/8/4 bits -> hw/estimate_checks.json
+
+# Systolic-array animation frames for the Beginner level (already committed)
+python hw/model/export_frames.py            # -> hw/model/systolic_frames.json
 ```
+
+**User study:** see `docs/evaluation/README.md` (session script, participant sheet, results
+template). After the sessions: `python docs/evaluation/analyze.py docs/evaluation/results.csv`.
 
 **Website backend** (Anh's; see [Website](#website-anh_web)):
 ```bash
@@ -115,9 +129,9 @@ modelled FPGA estimates from `perf/perf_model.py`, not measured times.
 | --- | --- |
 | **Levels** (tabs in the top bar, address `#/home`, `#/beginner`, ...): Home · Beginner (Remember, Understand) · Intermediate (Apply, Analyze) · Advanced (Evaluate, Create) · Code | Working (`src/levels.js`, `src/pages/`) |
 | Home: the question the tool answers, image→vision→prefill→decode strip, why edge, who it's for, what to know first, level cards | Working |
-| Beginner: 5 short steps with a quick-check question each, clickable 3×3 matrix multiply, compute- vs memory-bound | Working (systolic-array animation next) |
+| Beginner: 5 short steps with a quick-check question each, clickable 3×3 matrix multiply, **animated systolic array** (play / pause / step, click a PE to see its sum), compute- vs memory-bound | Working. The animation replays `hw/model/systolic_model.py` cycle by cycle (`hw/model/export_frames.py` → `hw/model/systolic_frames.json` → `/api/systolic_frames`) |
 | Intermediate: one plain-language answer, 4 headline numbers vs the 4×4/16-bit start, one chart at a time, 5 tasks that tick themselves off | Working |
-| Advanced: build your own design, generate its Verilog, rank it, challenges | Planned (placeholder page) |
+| Advanced: build any P×P design (P = 2–32) at 16/8/4 bits; hardware estimated from the 9 Vivado results (real numbers when the size was synthesized); ranked against the 9 designs with plain-language reasons; generated top-level Verilog + the `run_tb.py` / `synth_one.tcl` commands for it; leave-one-out check of the estimates (worst error 5.8%); 3 challenges | Working (`anh_web/backend/custom_design.py`, `verilog_gen.py`, `/api/custom_design`, `/api/custom_design/validation`) |
 | Hardware controls (P, bits, bandwidth, advanced settings) | Working |
 | KPI cards (TTFT, tokens/s, answer time, energy) | Working (clock, power and energy use real Vivado data from `results.json`) |
 | Bottleneck lamps, target chip info | Working |
@@ -158,14 +172,17 @@ page shows the command to start it.
 
 **Tests:**
 ```powershell
-# backend (pytest, 30 tests): every number is checked against perf_model.py
+# backend (pytest, 45 tests): every number is checked against perf_model.py
 cd anh_web
 $env:PYTHONDONTWRITEBYTECODE = "1"
 .\.venv\Scripts\python -m pytest tests -v
 
-# frontend (Vitest, 22 tests): number formatting, "n/a" for missing values, 4×4 baselines, plain-language durations, chart scales/ticks
+# frontend (Vitest, 33 tests): number formatting, "n/a" for missing values, 4×4 baselines, plain-language durations, chart scales/ticks, animation vs hardware-model frames, Advanced challenges, accuracy task
 cd frontend
 npm test -- --run
+
+# accuracy tools and user-study analysis (from the repo root)
+.\anh_web\.venv\Scripts\python -m pytest eryc_model/tests docs/evaluation -v
 ```
 
 **Quick demo check** (defaults: each design's Vivado Fmax from `results.json`, measured SmolVLM workload, 1 GB/s, utilization 0.8, 32 output tokens):
@@ -185,7 +202,9 @@ Missing data shows "n/a" or "pending".
 | Clock | Advanced setting, else `fmax_mhz` from `results.json`, else 100 MHz |
 | LUTs, DSPs, FFs, BRAM, Fmax, power, fits on chip | `results.json` (chip limits match `hw/scripts/run_sweep.py`) |
 | Energy per answer | `estimate()` with `power_w` from `results.json` |
-| Accuracy | `eryc_model/accuracy.json` |
+| Accuracy at 16 / 8 / 4 bits (Accuracy tab, answer card, Advanced verdict) | `eryc_model/accuracy.json` from `eryc_model/eval_accuracy.py` |
+| Advanced: any P×P design | `anh_web/backend/custom_design.py` (fitted to `results.json`), `verilog_gen.py` |
+| "How good are the estimates?" | leave-one-out on `results.json`, plus `hw/estimate_checks.json` if it exists |
 
 **Placeholder data:** cards using placeholder input show an amber **PLACEHOLDER DATA** pill (none
 should show now that the measured profile is in). The backend re-reads its data files when they change, so the site switches
