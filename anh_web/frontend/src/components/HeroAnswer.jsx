@@ -40,15 +40,46 @@ export default function HeroAnswer(props) {
       compare = <p className="hero-compare">{text}</p>;
     }
   } else if (start) {
-    compare = <p className="hero-compare">This is the starting design. Try the controls on the left.</p>;
+    compare = <p className="hero-compare">This is the starting design. Try changing the array size or bits.</p>;
+  }
+
+  let label = designLabel(e.design, e.P, e.bits);
+  let estimatedTag = null;
+  if (e.custom) {
+    label = "Your design · " + e.P + "×" + e.P + " · " + e.bits + "-bit";
+    if (e.design) {
+      label = label + " (= design " + e.design + ")";
+    }
+    if (e.resources && e.resources.estimated) {
+      estimatedTag = <span className="estimated-tag">Estimated hardware</span>;
+    }
+  }
+
+  // answer quality at this design's bit width (from eryc_model/accuracy.json)
+  let quality = null;
+  if (props.accuracy && props.accuracy[String(e.bits)]) {
+    const right = Math.round(props.accuracy[String(e.bits)].score * 100);
+    let reference = "";
+    if (props.accuracy.full) {
+      reference = " (" + Math.round(props.accuracy.full.score * 100) + "% with full-precision weights)";
+    }
+    quality = (
+      <p className="hero-quality">
+        <Icon name="check" size={15} /> With {e.bits}-bit weights it answers <strong>{right}%</strong> of our{" "}
+        {props.accuracy.n} test questions right{reference}.
+      </p>
+    );
   }
 
   return (
     <section className="card hero-answer">
       <div className="hero-top">
-        <span className="design-pill mono">{designLabel(e.design, e.P, e.bits)}</span>
+        <span className="hero-labels">
+          <span className="design-pill mono">{label}</span>
+          {estimatedTag}
+        </span>
         <InfoTip label="How these numbers are made" align="right">
-          Predicted with the hardware team's roofline model at {e.f_mhz} MHz ({e.f_mhz_source}),{" "}
+          Predicted with the hardware team's roofline model at {Number(e.f_mhz).toFixed(1)} MHz ({e.f_mhz_source}),{" "}
           {e.bw_gbs.toFixed(2)} GB/s and {Math.round(e.util * 100)}% utilization, using the
           measured SmolVLM workload. They are estimates, not times measured on a board.
         </InfoTip>
@@ -61,6 +92,7 @@ export default function HeroAnswer(props) {
         <span className="hero-dot">·</span>
         <Icon name="gauge" size={15} /> then <strong>{formatRate(e.tokens_per_s)} words/s</strong>
       </p>
+      {quality}
       <p className="hero-why">
         {share.toFixed(0)}% of the wait is the <strong>{PHASE_NAMES[biggest]}</strong>, which is{" "}
         {bound === "compute" ? "math-limited" : "memory-limited"}, so {advice}.

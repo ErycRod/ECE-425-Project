@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import useStoredState from "../useStoredState.js";
 import Icon from "./Icon.jsx";
 import InfoTip from "./InfoTip.jsx";
 import QuickCheck from "./QuickCheck.jsx";
 import { findDesign, shortDesignName } from "../format.js";
+import { bestBitsWithinFivePoints } from "../accuracy.js";
 
 // Tasks for the Intermediate level. The first four tick themselves off when
 // the current estimate meets the goal; the last one is a question.
@@ -36,6 +38,20 @@ export const TASKS = [
     check: (e) => e.P === 8 && typeof e.energy_J === "number" && e.energy_J < 20,
   },
 ];
+
+function accuracyTask(accuracy) {
+  const best = bestBitsWithinFivePoints(accuracy);
+  if (best === null) {
+    return null;
+  }
+  return {
+    key: "accuracy-tradeoff",
+    bloom: "Analyze",
+    title: "Pick the fastest-writing bit width that still answers within 5 points of full precision.",
+    hint: "Open the Accuracy tab: fewer bits write faster, but check how many answers each one still gets right.",
+    check: (e) => e.bits === best,
+  };
+}
 
 // the "why is 8-bit slower?" question, with the clock numbers from the sweep
 function whyQuestion(sweep) {
@@ -79,7 +95,14 @@ function whyQuestion(sweep) {
 export default function TaskPanel(props) {
   const e = props.estimate;
   // key -> name of the design that solved it, e.g. "16×16/4-bit"
-  const [done, setDone] = useState({});
+  const [done, setDone] = useStoredState("intermediate-tasks", {});
+
+  // the four fixed tasks, plus the accuracy task once accuracy results exist
+  let tasks = TASKS;
+  const extra = accuracyTask(props.accuracy);
+  if (extra) {
+    tasks = TASKS.concat([extra]);
+  }
 
   // tick off any task the current numbers meet
   useEffect(() => {
@@ -88,8 +111,8 @@ export default function TaskPanel(props) {
     }
     let changed = false;
     const copy = { ...done };
-    for (let i = 0; i < TASKS.length; i++) {
-      const task = TASKS[i];
+    for (let i = 0; i < tasks.length; i++) {
+      const task = tasks[i];
       if (!copy[task.key] && task.check(e)) {
         copy[task.key] = shortDesignName(e.P, e.bits) + " at " + e.bw_gbs.toFixed(2) + " GB/s";
         changed = true;
@@ -100,12 +123,12 @@ export default function TaskPanel(props) {
     }
     // only re-check when the numbers change
     // (done is read but not a trigger, so ticking one off doesn't loop)
-  }, [e]);
+  }, [e, props.accuracy]);
 
   let count = 0;
   let items = [];
-  for (let i = 0; i < TASKS.length; i++) {
-    const task = TASKS[i];
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
     const solved = done[task.key];
     if (solved) {
       count = count + 1;
@@ -133,7 +156,7 @@ export default function TaskPanel(props) {
   if (done.why) {
     count = count + 1;
   }
-  const total = TASKS.length + 1;
+  const total = tasks.length + 1;
 
   function markWhyDone() {
     const copy = { ...done };

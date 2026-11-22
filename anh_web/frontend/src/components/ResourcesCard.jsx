@@ -106,6 +106,15 @@ export default function ResourcesCard(props) {
   }
 
   // the hardware team's note, unless the line above already says the same thing (DSP spill)
+  let estimatedNote = null;
+  if (res.estimated) {
+    estimatedNote = (
+      <p className="resource-estimated">
+        <Icon name="info" size={13} /> Estimated, not synthesized: {res.basis}.
+      </p>
+    );
+  }
+
   let note = null;
   const spillShown = res.dsps !== null && res.dsps > 0 && res.dsps < estimate.P * estimate.P;
   if (estimate.hw_team_note && !spillShown) {
@@ -164,6 +173,7 @@ export default function ResourcesCard(props) {
           <span className={fitsClass + " mono"}>{fits}</span>
         </div>
       </div>
+      {estimatedNote}
       {note}
     </ChartCard>
   );

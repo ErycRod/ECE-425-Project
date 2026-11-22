@@ -1803,7 +1803,7 @@ pre.code-block:not(.json-response):not(.wrap) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 12px;
+  padding: 6px 11px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: transparent;
@@ -2638,4 +2638,579 @@ pre.code-block:not(.json-response):not(.wrap) {
   .chip-label {
     white-space: normal;
   }
+}
+
+/* ---------- systolic array animation (Beginner step 3) ---------- */
+
+.systolic {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.systolic-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.systolic-controls .chip-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.systolic-play {
+  padding: 6px 16px;
+  font-size: 13px;
+}
+
+.systolic-speed {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 6px;
+}
+
+.systolic-cycle {
+  margin-left: auto;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.systolic-svg {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.systolic-label {
+  fill: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pe {
+  cursor: pointer;
+  outline: none;
+}
+
+.pe rect {
+  fill: var(--card);
+  stroke: var(--border);
+  stroke-width: 1.5;
+  transition: fill 0.3s, stroke 0.3s;
+}
+
+.pe-active rect {
+  fill: rgba(245, 184, 61, 0.14);
+  stroke: var(--warn);
+  stroke-width: 2;
+}
+
+.pe-done rect {
+  stroke: rgba(34, 201, 138, 0.7);
+}
+
+.pe-picked rect {
+  stroke: var(--text);
+  stroke-width: 2;
+}
+
+.pe:focus-visible rect {
+  stroke: var(--text);
+}
+
+.pe-acc {
+  fill: var(--text);
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.pe-product {
+  fill: var(--warn);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.pe-check {
+  fill: var(--ok);
+  font-size: 13px;
+}
+
+.flow-arrow {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+  opacity: 0.6;
+}
+
+.op-chip {
+  transition: transform 0.45s ease-in-out, opacity 0.45s;
+  pointer-events: none;
+}
+
+.op-chip text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text);
+}
+
+.op-chip-a rect {
+  fill: #1c3556;
+  stroke: var(--bits-16);
+  stroke-width: 1.5;
+}
+
+.op-chip-b rect {
+  fill: #4a2416;
+  stroke: var(--bits-8);
+  stroke-width: 1.5;
+}
+
+.systolic-caption {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.systolic-sum {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--card);
+  font-size: 13px;
+}
+
+.systolic-note {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.systolic-note a {
+  color: var(--text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .op-chip,
+  .pe rect {
+    transition: none;
+  }
+}
+
+/* ---------- Advanced level: build your accelerator ---------- */
+
+.adv-top {
+  display: grid;
+  grid-template-columns: 330px minmax(0, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+
+.adv-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-width: 0;
+}
+
+.builder-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.builder-panel .panel-section {
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.builder-panel h3.card-title {
+  margin: 0 0 10px;
+}
+
+.builder-hint {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.builder-quick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.hero-labels {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.estimated-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  border: 1px dashed var(--warn);
+  color: var(--warn);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.resource-estimated {
+  display: flex;
+  gap: 6px;
+  margin: 12px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.extra-star {
+  cursor: default;
+  outline: none;
+}
+
+.extra-star polygon {
+  fill: var(--warn);
+  stroke: var(--card);
+  stroke-width: 2;
+}
+
+/* verdict */
+.rank-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.rank-tile {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.rank-best {
+  border-color: var(--ok);
+}
+
+.rank-name {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.rank-value {
+  font-size: 16px;
+}
+
+.rank-best .rank-value {
+  color: var(--ok);
+}
+
+.reason-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.reason {
+  display: flex;
+  gap: 8px;
+}
+
+.reason .icon {
+  margin-top: 3px;
+}
+
+.reason-good .icon {
+  color: var(--ok);
+}
+
+.reason-warning .icon {
+  color: var(--warn);
+}
+
+.reason-info .icon {
+  color: var(--muted);
+}
+
+/* Verilog */
+.commands {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.command-row {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.command-label {
+  color: var(--muted);
+  white-space: pre;
+}
+
+.command {
+  overflow-x: auto;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #0e1118;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .adv-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .command-row {
+    grid-template-columns: 1fr auto;
+  }
+  .command-label {
+    grid-column: 1 / -1;
+    white-space: normal;
+  }
+  .rank-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* grid children may shrink below their content (long code lines scroll instead) */
+.card-grid > *,
+.adv-top > * {
+  min-width: 0;
+}
+
+.verilog-card .card-header {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* ---------- accuracy vs bits ---------- */
+
+.hero-quality {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.hero-quality .icon {
+  color: var(--ok);
+}
+
+.acc-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acc-row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) 56px 96px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.acc-row-current .acc-label,
+.acc-row-current .acc-value {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.acc-label {
+  color: var(--muted);
+}
+
+.acc-track {
+  height: 14px;
+  border-radius: 0 4px 4px 0;
+  background: #1b2030;
+}
+
+.acc-fill {
+  height: 100%;
+  border-radius: 0 4px 4px 0;
+  transition: width 0.4s ease-out;
+}
+
+.acc-fill-grouped {
+  background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.22) 0 3px, transparent 3px 7px) !important;
+  background-color: var(--bits-4);
+}
+
+.acc-value {
+  text-align: right;
+}
+
+.acc-speed {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.acc-source {
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.acc-examples {
+  margin-top: 16px;
+}
+
+.acc-examples h3 {
+  margin: 0 0 8px;
+}
+
+.acc-examples ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.acc-example {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.acc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.acc-chip {
+  display: inline-flex;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.acc-chip-key {
+  color: var(--muted);
+}
+
+.acc-chip-right {
+  border-color: rgba(34, 201, 138, 0.6);
+}
+
+.acc-chip-wrong {
+  border-color: rgba(255, 77, 106, 0.6);
+}
+
+.acc-chip-wrong .mono {
+  text-decoration: line-through;
+  text-decoration-color: rgba(255, 77, 106, 0.8);
+}
+
+@media (max-width: 860px) {
+  .acc-row {
+    grid-template-columns: 1fr 52px;
+  }
+  .acc-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .acc-speed {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .acc-fill {
+    transition: none;
+  }
+}
+
+.check-subtitle {
+  margin: 18px 0 8px;
+}
+
+/* ---------- "next level" link at the bottom of a level ---------- */
+
+.next-level {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color 0.2s;
+}
+
+.next-level:hover {
+  border-color: var(--muted);
+}
+
+.next-level-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.next-level-label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.next-level-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.next-level-goal {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.next-level-arrow {
+  font-size: 22px;
 }

@@ -9,24 +9,14 @@ import BandwidthChart from "../components/BandwidthChart.jsx";
 import ResourcesCard from "../components/ResourcesCard.jsx";
 import BottleneckLamps from "../components/BottleneckLamps.jsx";
 import AskPanel from "../components/AskPanel.jsx";
-import PlaceholderCard from "../components/PlaceholderCard.jsx";
+import AccuracyCard from "../components/AccuracyCard.jsx";
+import NextLevel from "../components/NextLevel.jsx";
 
 // Intermediate level (Apply · Analyze): the design explorer.
 // Order on the page: one plain answer -> 4 numbers -> one chart at a time + tasks -> try the real model.
 export default function IntermediatePage(props) {
   const estimate = props.estimate;
   const sweep = props.sweep;
-
-  // shown only once eryc_model/accuracy.json exists (no "coming next" cards on the page)
-  let accuracyCard = null;
-  if (props.flags && props.flags.accuracy_pending === false) {
-    accuracyCard = (
-      <PlaceholderCard
-        title="Accuracy vs bits"
-        text="accuracy.json found: answer quality at 16, 8 and 4 bits (chart next)."
-      />
-    );
-  }
 
   let body = <p className="muted-text">Waiting for the backend…</p>;
   if (estimate && sweep) {
@@ -39,7 +29,7 @@ export default function IntermediatePage(props) {
       },
       {
         key: "time",
-        label: "Where time goes",
+        label: "Time split",
         icon: "barChart",
         content: (
           <PhaseBreakdown sweep={sweep} estimate={estimate} P={props.P} bits={props.bits} onSelect={props.onSelect} />
@@ -72,19 +62,28 @@ export default function IntermediatePage(props) {
         content: <BottleneckLamps estimate={estimate} />,
       },
     ];
+    // the Accuracy tab appears once eryc_model/accuracy.json exists (no "coming next" cards)
+    if (props.accuracy) {
+      tabs.splice(1, 0, {
+        key: "accuracy",
+        label: "Accuracy",
+        icon: "check",
+        content: <AccuracyCard accuracy={props.accuracy} sweep={sweep} P={props.P} bits={props.bits} />,
+      });
+    }
 
     body = (
       <>
-        <HeroAnswer estimate={estimate} sweep={sweep} />
+        <HeroAnswer estimate={estimate} sweep={sweep} accuracy={props.accuracy} />
         <KpiCards estimate={estimate} sweep={sweep} />
         <div className="explore-grid">
           <ChartTabs tabs={tabs} />
-          <TaskPanel estimate={estimate} sweep={sweep} />
+          <TaskPanel estimate={estimate} sweep={sweep} accuracy={props.accuracy} />
         </div>
         <div className="card-grid">
           <AskPanel estimate={estimate} flags={props.flags} />
-          {accuracyCard}
         </div>
+        <NextLevel to="advanced" />
       </>
     );
   }

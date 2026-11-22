@@ -24,6 +24,8 @@ import data
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.path.join(data.REPO_ROOT, "perf"))
 from perf_model import estimate, phase_time
+import custom_design
+import verilog_gen
 
 # settings
 ALLOWED_P = [4, 8, 16]
@@ -66,6 +68,8 @@ SOURCES = {
                       "about": "Roofline performance model behind every number on the page."},
     "systolic_model.py": {"path": "hw/model/systolic_model.py", "language": "python",
                           "about": "Cycle-by-cycle Python copy of the hardware."},
+    "export_frames.py": {"path": "hw/model/export_frames.py", "language": "python",
+                         "about": "Records the model cycle by cycle for the Beginner animation."},
 }
 
 app = FastAPI(title="EdgeVLM Lab backend")
@@ -88,6 +92,15 @@ class EstimateRequest(BaseModel):
 
 
 class SweepRequest(BaseModel):
+    bw_gbs: float = DEFAULT_BW_GBS
+    f_mhz: Optional[float] = None
+    util: Optional[float] = None
+    out_tokens: Optional[int] = None
+
+
+class CustomDesignRequest(BaseModel):
+    P: int
+    bits: int
     bw_gbs: float = DEFAULT_BW_GBS
     f_mhz: Optional[float] = None
     util: Optional[float] = None
@@ -259,6 +272,59 @@ def run_one_design(P, bits, bw_gbs, f_mhz_override, util, out_tokens):
     return result
 
 
+def run_custom_design(P, bits, bw_gbs, f_mhz_override, util, out_tokens):
+    """Same shape as run_one_design(), for any P from 2 to 32. The hardware numbers come
+    from custom_design.estimate_hardware(): real Vivado numbers when the design was
+    synthesized, otherwise estimated from the 9 synthesized designs."""
+    profile_info = data.load_profile()
+    profile = profile_info["profile"]
+    results = data.load_results()
+    hardware = custom_design.estimate_hardware(P, bits, results["rows"], CHIP_LIMITS)
+
+    if f_mhz_override is not None:
+        f_mhz = f_mhz_override
+        f_source = "user"
+    elif hardware is not None:
+        f_mhz = hardware["fmax_mhz"]
+        if hardware["estimated"]:
+            f_source = "estimated Fmax"
+        else:
+            f_source = "results.json (Fmax)"
+    else:
+        f_mhz = DEFAULT_F_MHZ
+        f_source = "default (perf_model.py)"
+
+    if hardware is not None and hardware["power_w"] is not None:
+        result = estimate(profile, P, bits, f_mhz, bw_gbs, util, out_tokens, hardware["power_w"])
+        energy_note = None
+    else:
+        result = estimate(profile, P, bits, f_mhz, bw_gbs, util, out_tokens)
+        energy_note = "needs real power data (results.json)"
+
+    design = None
+    if P in ALLOWED_P:
+        design = design_number(P, bits)
+
+    result["design"] = design
+    result["custom"] = True
+    result["bw_gbs"] = bw_gbs
+    result["f_mhz"] = f_mhz
+    result["f_mhz_source"] = f_source
+    result["util"] = util
+    result["out_tokens"] = out_tokens
+    result["energy_note"] = energy_note
+    result["phases"] = get_phases(profile, P, bits, f_mhz, bw_gbs, util)
+    result["workload"] = {
+        "vision_macs": profile["vision"]["macs"],
+        "vision_params": profile["vision"]["params"],
+        "lm_params": profile["lm"]["params"],
+        "prefill_tokens": profile["prefill_tokens"],
+    }
+    result["resources"] = hardware
+    result["hw_team_note"] = None
+    return result
+
+
 # model (Eryc's eryc_model/vlm.py, loaded the first time someone asks)
 # Everything that depends on Eryc's code is in load_model() and call_model()
 # (and data.VLM_PATH). If his file, function name or arguments end up
@@ -409,6 +475,78 @@ def bandwidth_curve(request: BandwidthCurveRequest):
     return {"P": request.P, "lines": lines, "flags": flags()}
 
 
+# Advanced level: build any P x P design, rank it against the 9 synthesized ones,
+# explain the result, and generate its Verilog and build commands.
+@app.post("/api/custom_design")
+def custom_design_endpoint(request: CustomDesignRequest):
+    if request.P < custom_design.MIN_P or request.P > custom_design.MAX_P:
+        raise HTTPException(status_code=422, detail="P must be between " + str(custom_design.MIN_P)
+                            + " and " + str(custom_design.MAX_P))
+    check_bits(request.bits)
+    check_positive("bw_gbs", request.bw_gbs)
+    check_positive("f_mhz", request.f_mhz)
+    check_positive("out_tokens", request.out_tokens)
+    check_util(request.util)
+
+    results = data.load_results()
+    if not results["available"]:
+        raise HTTPException(status_code=409, detail="needs results.json (the Vivado sweep) to estimate hardware")
+
+    util = pick_util(request.util)
+    out_tokens = pick_out_tokens(request.out_tokens)
+    custom = run_custom_design(request.P, request.bits, request.bw_gbs, request.f_mhz, util, out_tokens)
+
+    # the 9 synthesized designs at the same bandwidth (their own real clocks) to compare against
+    designs = []
+    for bits in ALLOWED_BITS:
+        for P in ALLOWED_P:
+            designs.append(run_one_design(P, bits, request.bw_gbs, None, util, out_tokens))
+
+    ranking = custom_design.rank_design(custom, designs)
+    res = custom["resources"]
+    sheet = [
+        "Estimated on the Zynq-7020: {:,} LUTs, {} DSPs, {:.1f} MHz, {:.3f} W ({})".format(
+            int(res["luts"]), int(res["dsps"]), res["fmax_mhz"], res["power_w"],
+            "estimated" if res["estimated"] else "Vivado"),
+        "Predicted for SmolVLM-256M at {:.2f} GB/s: first word {:.1f} s, {:.1f} words/s".format(
+            request.bw_gbs, custom["ttft_s"], custom["tokens_per_s"]),
+    ]
+    return {
+        "design": custom,
+        "designs": designs,
+        "ranking": ranking,
+        "explanations": custom_design.explain(custom, ranking, CHIP_LIMITS, accuracy_data()),
+        "verilog": {
+            "file_name": verilog_gen.file_name(request.P, request.bits),
+            "text": verilog_gen.make_top(request.P, request.bits, sheet),
+        },
+        "commands": verilog_gen.commands(request.P, request.bits),
+        "limits": {"min_P": custom_design.MIN_P, "max_P": custom_design.MAX_P},
+    }
+
+
+def accuracy_data():
+    """eryc_model/accuracy.json, or None while it doesn't exist yet."""
+    accuracy = data.load_accuracy()
+    if accuracy["pending"]:
+        return None
+    return accuracy["data"]
+
+
+# how well the hardware estimates predict designs they weren't fitted on
+@app.get("/api/custom_design/validation")
+def custom_design_validation():
+    results = data.load_results()
+    if not results["available"]:
+        raise HTTPException(status_code=409, detail="needs results.json (the Vivado sweep)")
+    check = custom_design.leave_one_out(results["rows"])
+    # sizes synthesized only to test the estimates (hw/scripts/check_estimate.py), if any
+    check["new_size_checks"] = []
+    if os.path.exists(data.ESTIMATE_CHECKS_PATH):
+        check["new_size_checks"] = data.read_json_file(data.ESTIMATE_CHECKS_PATH)
+    return check
+
+
 @app.get("/api/accuracy")
 def accuracy():
     return data.load_accuracy()
@@ -438,6 +576,15 @@ def figure(name: str):
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="figure file not found in docs/")
     return FileResponse(path, media_type="image/png")
+
+
+# Beginner animation: the systolic array recorded cycle by cycle by the hardware model
+@app.get("/api/systolic_frames")
+def systolic_frames():
+    if not os.path.exists(data.SYSTOLIC_FRAMES_PATH):
+        raise HTTPException(status_code=404,
+                            detail="no recording yet: run python hw/model/export_frames.py")
+    return data.read_json_file(data.SYSTOLIC_FRAMES_PATH)
 
 
 # developer view: the real source files, so the page shows the code that made the numbers.

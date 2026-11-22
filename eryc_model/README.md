@@ -19,3 +19,25 @@ and test how much answer quality drops when weights are rounded to 8-bit and 4-b
 `python perf/perf_model.py --profile eryc_model/profile_summary.json`.
 
 Tip: PyTorch forward hooks on every `nn.Linear` layer give you in/out features and token counts per layer.
+
+## Accuracy at 16 / 8 / 4 bits
+
+`eval_accuracy.py` asks SmolVLM-256M the same VQAv2 image questions with its weights rounded to
+16, 8 and 4 bits (plus full precision and 4-bit with one scale per 128 weights) and scores the
+answers. Run from the repo folder:
+
+```
+python eryc_model/eval_accuracy.py --n 20     # quick try (~5 min on a laptop CPU)
+python eryc_model/eval_accuracy.py            # 100 questions (~20-40 min)
+```
+
+It writes `eryc_model/accuracy.json`; the website shows it on its own (Intermediate → Accuracy).
+
+- `quantize.py`: fake quantization of every `nn.Linear` weight (round to signed B-bit integers
+  and back), per output channel or per group of 128, with save/restore of the original weights.
+- `vqa_score.py`: VQA-style answer normalization and matching (no PyTorch needed).
+- Questions: the first N of `merve/vqav2-small` (VQAv2 validation), streamed, so only those
+  images are downloaded.
+- Limitation: only weights are rounded; activations stay in full precision.
+
+Tests: `python -m pytest eryc_model/tests` (the quantization tests need PyTorch).

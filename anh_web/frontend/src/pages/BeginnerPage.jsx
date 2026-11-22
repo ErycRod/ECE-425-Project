@@ -1,9 +1,10 @@
-import { useState } from "react";
+import useStoredState from "../useStoredState.js";
 import Icon from "../components/Icon.jsx";
 import PageIntro from "../components/PageIntro.jsx";
 import PipelineStrip from "../components/PipelineStrip.jsx";
 import QuickCheck from "../components/QuickCheck.jsx";
 import MatrixDemo from "../components/MatrixDemo.jsx";
+import SystolicAnimation from "../components/SystolicAnimation.jsx";
 import { findDesign, humanDuration } from "../format.js";
 
 const GOALS = [
@@ -16,8 +17,8 @@ const GOALS = [
 // Beginner level (Remember · Understand): five short steps, one idea each,
 // each ending with a quick check.
 export default function BeginnerPage(props) {
-  const [step, setStep] = useState(0);
-  const [passed, setPassed] = useState({});
+  const [step, setStep] = useStoredState("beginner-step", 0);
+  const [passed, setPassed] = useStoredState("beginner-passed", {});
   const start = findDesign(props.sweep, 4, 16);
 
   let visionShare = "about 90%";
@@ -94,10 +95,7 @@ export default function BeginnerPage(props) {
               16 for 4×4, 256 for 16×16.
             </li>
           </ul>
-          <figure className="figure">
-            <img className="figure-img figure-small" src="/api/figures/dataflow" alt="Data flowing through a systolic array: A moves right, B moves down." />
-            <figcaption className="figure-caption">A step-by-step animation of this is coming next.</figcaption>
-          </figure>
+          <SystolicAnimation />
         </>
       ),
       check: {

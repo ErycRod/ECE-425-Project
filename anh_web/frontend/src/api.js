@@ -70,3 +70,23 @@ export function getBandwidthCurve(settings) {
 export function getSource(name) {
   return request("GET", "/api/source/" + encodeURIComponent(name));
 }
+
+// the systolic array recorded cycle by cycle (Beginner animation)
+export function getSystolicFrames() {
+  return request("GET", "/api/systolic_frames");
+}
+
+// Advanced level: any P x P design, ranked and explained, with its Verilog
+export function postCustomDesign(settings) {
+  return request("POST", "/api/custom_design", settings);
+}
+
+// how well the hardware estimates predict designs they weren't fitted on
+export function getCustomValidation() {
+  return request("GET", "/api/custom_design/validation");
+}
+
+// accuracy at 16 / 8 / 4 bits (eryc_model/accuracy.json); { pending, source, data }
+export function getAccuracy() {
+  return request("GET", "/api/accuracy");
+}
