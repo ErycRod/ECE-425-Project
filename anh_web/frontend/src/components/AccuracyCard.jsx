@@ -2,6 +2,7 @@ import ChartCard from "./ChartCard.jsx";
 import Icon from "./Icon.jsx";
 import { BIT_COLOR } from "./TradeoffChart.jsx";
 import { formatRate, findDesign } from "../format.js";
+import { agreementSummary } from "../accuracy.js";
 
 const FULL_COLOR = "#6d7fa8";
 
@@ -82,6 +83,38 @@ export default function AccuracyCard(props) {
     );
   }
 
+  // how many answers each precision kept identical to full precision
+  let agreement = null;
+  const summary = agreementSummary(acc);
+  if (summary && summary.parts.length > 0) {
+    let counts = [];
+    for (let i = 0; i < summary.parts.length; i++) {
+      const part = summary.parts[i];
+      counts.push(
+        <span key={part.key} className="acc-agree-item">
+          {part.label} <span className="mono">{part.same}/{summary.n}</span>
+        </span>
+      );
+    }
+    let balancedText = null;
+    if (summary.balanced.length > 0) {
+      balancedText = (
+        <p className="acc-agree-note">
+          {summary.balanced.join(" and ")} still change a few answers (see below), but as many turn
+          right as turn wrong, so the score doesn't move.
+        </p>
+      );
+    }
+    agreement = (
+      <div className="acc-agree">
+        <p className="acc-agree-counts">
+          <span className="dim">Same answer as full precision:</span> {counts}
+        </p>
+        {balancedText}
+      </div>
+    );
+  }
+
   // a few questions where fewer bits changed the answer
   let examples = null;
   if (acc.examples && acc.examples.length > 0) {
@@ -149,6 +182,7 @@ export default function AccuracyCard(props) {
       <p className="acc-source">
         {acc.n} questions from {acc.dataset}
       </p>
+      {agreement}
       {examples}
     </ChartCard>
   );

@@ -503,6 +503,7 @@ def custom_design_endpoint(request: CustomDesignRequest):
             designs.append(run_one_design(P, bits, request.bw_gbs, None, util, out_tokens))
 
     ranking = custom_design.rank_design(custom, designs)
+    accuracy = accuracy_data()
     res = custom["resources"]
     sheet = [
         "Estimated on the Zynq-7020: {:,} LUTs, {} DSPs, {:.1f} MHz, {:.3f} W ({})".format(
@@ -515,7 +516,8 @@ def custom_design_endpoint(request: CustomDesignRequest):
         "design": custom,
         "designs": designs,
         "ranking": ranking,
-        "explanations": custom_design.explain(custom, ranking, CHIP_LIMITS, accuracy_data()),
+        "explanations": custom_design.explain(custom, ranking, CHIP_LIMITS, accuracy),
+        "accuracy": custom_design.accuracy_summary(request.bits, accuracy),
         "verilog": {
             "file_name": verilog_gen.file_name(request.P, request.bits),
             "text": verilog_gen.make_top(request.P, request.bits, sheet),

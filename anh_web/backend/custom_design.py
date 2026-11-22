@@ -288,6 +288,44 @@ def rank_design(custom, designs):
             "compared_with": len(others)}
 
 
+def accuracy_summary(bits, accuracy):
+    """How often the model answered right at this bit width, for the verdict's Accuracy tile.
+
+    Accuracy depends only on the bits per weight (not on the array size), so it's shown as a
+    measured score next to full precision instead of a rank. None while
+    eryc_model/accuracy.json doesn't exist yet.
+    """
+    if not accuracy:
+        return None
+    entry = accuracy.get(str(bits))
+    if not entry or "score" not in entry:
+        return None
+    pct = entry["score"] * 100
+
+    # the reference: full precision if it was measured, otherwise the best of 16/8/4 bits
+    reference = pct
+    for b in (16, 8, 4):
+        other = accuracy.get(str(b))
+        if other and "score" in other:
+            reference = max(reference, other["score"] * 100)
+    full_pct = None
+    if "full" in accuracy and "score" in accuracy["full"]:
+        full_pct = accuracy["full"]["score"] * 100
+        reference = full_pct
+
+    drop = reference - pct
+    return {
+        "bits": bits,
+        "pct": round(pct, 1),
+        "full_pct": None if full_pct is None else round(full_pct, 1),
+        "reference_pct": round(reference, 1),
+        "drop_points": round(drop, 1),
+        "n": accuracy.get("n"),
+        # same 5-point rule as the explanation line and the accuracy task
+        "warning": drop > 5,
+    }
+
+
 def explain(custom, ranking, limits, accuracy=None):
     """Short plain-language reasons for how the design did. Each is {"kind", "text"} where
     kind is "good", "warning" or "info". `accuracy` is eryc_model/accuracy.json (or None)."""

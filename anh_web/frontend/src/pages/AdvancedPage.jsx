@@ -98,7 +98,7 @@ export default function AdvancedPage(props) {
       <>
         <KpiCards estimate={design} sweep={sweep} />
         <div className="card-grid">
-          <VerdictCard ranking={reply.ranking} explanations={reply.explanations} />
+          <VerdictCard ranking={reply.ranking} explanations={reply.explanations} accuracy={reply.accuracy} />
           <TradeoffChart
             sweep={sweep}
             P={P}

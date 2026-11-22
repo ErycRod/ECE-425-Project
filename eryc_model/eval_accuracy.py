@@ -141,6 +141,11 @@ def main():
         print("  {:<22} {:.1%}".format(s["label"], output[s["key"]]["score"]))
 
 
+def same_reply(a, b):
+    """The same answer, ignoring case and surrounding spaces."""
+    return (a or "").strip().lower() == (b or "").strip().lower()
+
+
 def score_replies(output):
     """Scores, plus a few questions where fewer bits changed the answer (for the website),
     from the saved replies. Used after a run and by --rescore."""
@@ -148,15 +153,39 @@ def score_replies(output):
     keys = [s["key"] for s in SETTINGS if s["key"] in output]
     for key in keys:
         output[key]["score"] = round(accuracy([r[key] for r in replies], [r["answer"] for r in replies]), 4)
-    examples = []
-    for r in replies:
-        if len(set(r[key].lower() for key in keys)) > 1 and len(examples) < 8:
-            entry = {"question": r["question"], "answer": r["answer"]}
-            for key in keys:
-                entry[key] = r[key]
-                entry[key + "_correct"] = is_correct(r[key], r["answer"])
-            examples.append(entry)
-    output["examples"] = examples
+    # how many answers each precision kept identical to full precision, and how many it
+    # turned from right to wrong ("lost") or wrong to right ("gained")
+    if "full" in keys:
+        agreement = {}
+        for key in keys:
+            if key == "full":
+                continue
+            same = lost = gained = 0
+            for r in replies:
+                if same_reply(r[key], r["full"]):
+                    same += 1
+                full_right = is_correct(r["full"], r["answer"])
+                right = is_correct(r[key], r["answer"])
+                if full_right and not right:
+                    lost += 1
+                if right and not full_right:
+                    gained += 1
+            agreement[key] = {"same": same, "lost": lost, "gained": gained}
+        output["agreement"] = agreement
+
+    # examples for the website: first the questions where 16- or 8-bit changed the answer
+    # (so it's visible that they do change, just rarely), then ones where only 4-bit did
+    def example(r):
+        entry = {"question": r["question"], "answer": r["answer"]}
+        for key in keys:
+            entry[key] = r[key]
+            entry[key + "_correct"] = is_correct(r[key], r["answer"])
+        return entry
+
+    high = [r for r in replies if "full" in r and any(
+        key in ("16", "8") and not same_reply(r[key], r["full"]) for key in keys)]
+    others = [r for r in replies if r not in high and len(set(r[key].strip().lower() for key in keys)) > 1]
+    output["examples"] = [example(r) for r in high[:2] + others[:6]]
     output["metric"] = ("VQA-normalized match (lowercase, no punctuation/articles, number words to digits): "
                         "the reply equals or starts with the answer, or is a short sentence (up to 12 words) "
                         "containing it; yes/no answers must start the reply")

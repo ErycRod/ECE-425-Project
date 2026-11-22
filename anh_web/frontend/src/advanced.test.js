@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { makeChallenges } from "./challenges.js";
+import { accuracyTile, rankNote } from "./verdict.js";
 
 // a tiny fake /api/custom_design reply: two synthesized designs and the user's design
 function reply(design) {
@@ -52,5 +53,26 @@ describe("challenge size limit", () => {
     const list = makeChallenges(huge);
     expect(list[0].check(huge)).toBe(false);
     expect(list[2].check(huge)).toBe(false);
+  });
+});
+
+describe("Advanced verdict", () => {
+  it("says what the ranks are out of", () => {
+    const ten = { ranks: { ttft_s: { rank: 1, of: 10 }, tokens_per_s: null, energy_J: { rank: 2, of: 10 } } };
+    expect(rankNote(ten)).toContain("10 designs in all");
+    const nine = { ranks: { ttft_s: { rank: 8, of: 9 }, tokens_per_s: { rank: 1, of: 9 }, energy_J: { rank: 8, of: 9 } } };
+    expect(rankNote(nine)).toContain("other 8 (9 in all)");
+    expect(rankNote({ ranks: { ttft_s: null } })).toBe("");
+  });
+
+  it("accuracy tile warns when the score drops a lot", () => {
+    const low = accuracyTile({ pct: 20, full_pct: 50, drop_points: 30, warning: true });
+    expect(low.value).toBe("20% right");
+    expect(low.detail).toBe("30 points below full precision");
+    expect(low.tone).toBe("warn");
+    const same = accuracyTile({ pct: 50, full_pct: 50, drop_points: 0, warning: false });
+    expect(same.detail).toBe("same as full precision");
+    expect(same.tone).toBe("best");
+    expect(accuracyTile(null).value).toBe("n/a");
   });
 });
